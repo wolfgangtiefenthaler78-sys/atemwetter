@@ -16,7 +16,8 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergi
 | Gestaltung (Farb-Tokens, Hell/Dunkel) | `src/styles.css` |
 | Logik der Oberfläche | `src/app.js` (`startApp(data, api)`) |
 | Datenzugriff Supabase, Login, Speichern | `src/data.js` |
-| Android-Zusatz (GPS-Live-Daten, Teilen, Selbst-Update) | `src/native.js` |
+| Live-Daten für den genauen Standort (Web und Android) | `src/live.js` |
+| Android-Zusatz (Standort, Teilen, Selbst-Update) | `src/native.js` |
 | Öffentliche Verbindungsdaten | `src/config.js` (nur URL + anon-Schlüssel) |
 | Datenbank-Schema und Zugriffsregeln | `supabase/migrations/*.sql`, Startdaten `supabase/seed.sql` |
 | Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py` |

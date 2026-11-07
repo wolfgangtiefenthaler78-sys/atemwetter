@@ -510,7 +510,8 @@ function locate(manual){
     let best=null, bd=1e9; PLACES.forEach(p=>{ if(p.id==='gps') return; const d=distKm(la,lo,p.lat,p.lon); if(d<bd){bd=d;best=p;} });
     if(!best) return;
     autoInfo = 'automatisch';
-    if(window.__AWNative && window.__AWNative.onPosition){ window.__AWNative.onPosition(la, lo, st); }
+    const live = (window.__AWNative && window.__AWNative.onPosition) || window.__AWLive;
+    if(live){ live(la, lo, st); }
     else {
       setPlace(best.id, true);
       st.textContent = bd > 60 ? 'Nächster Ort in der Liste: '+best.name+' ('+Math.round(bd)+' km entfernt). Die Werte können für deinen Standort abweichen.' : 'Gefunden: '+best.name+' (etwa '+Math.max(1,Math.round(bd))+' km entfernt).';
