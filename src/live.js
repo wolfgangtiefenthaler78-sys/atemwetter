@@ -28,7 +28,8 @@ const mean = xs => xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null;
 const r1 = x => x == null ? 0 : Math.round(x*10)/10;
 
 export async function fetchDays(lat, lon){
-  const ll = 'lat_lon=' + lat.toFixed(4) + ',' + lon.toFixed(4), st = startUtc();
+  // Datenschutz: nur auf 0,01° (rund 1 km) gerundet weitergeben – das Modellgitter ist ohnehin 1–9 km grob
+  const ll = 'lat_lon=' + lat.toFixed(2) + ',' + lon.toFixed(2), st = startUtc();
   const CP = 'parameters=pm25surf,pm10surf,no2surf,o3surf&' + ll + '&start=' + st + '&output_format=geojson';
   // Luft: 3-km-Modell, außerhalb davon (z. B. Norddeutschland) das europaweite 9-km-Modell
   let chem; try { chem = await getJSON(BASE + 'chem-v2-1h-3km?' + CP); } catch(e){ chem = await getJSON(BASE + 'chem-v2-1h-9km?' + CP); }

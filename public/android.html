@@ -6,16 +6,13 @@
 <title>Atemwetter für Android</title>
 <meta name="description" content="Atemwetter kostenlos aufs Android-Handy laden: Luftqualität, Pollen und Atemübungen für Österreich, Deutschland, die Schweiz und Liechtenstein.">
 <link rel="icon" href="./icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Familjen+Grotesk:wght@600;700&display=swap">
 <style>
 :root{--bg:#eef2f1;--surface:#f8faf9;--ink:#17262b;--muted:#56676c;--line:#cfd9d8;--accent:#2f5d8a;--accent-ink:#fff;--accent-soft:#dfe8f1;--warn:#8a5a00;--warn-soft:#fbf1dc}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn:#f0c46a;--warn-soft:#2c2617;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn:#f0c46a;--warn-soft:#2c2617;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.55}
+body{font-family:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:17px;line-height:1.55}
 main{max-width:640px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:24px}
 h1,h2{font-family:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;margin:0;line-height:1.15;text-wrap:balance}
 h1{font-size:clamp(2rem,8vw,2.8rem);letter-spacing:-.02em}
@@ -60,7 +57,7 @@ small{font-size:.85rem}
 
   <section class="card note">
     <h2>Gut zu wissen</h2>
-    <p>Die App sammelt keine persönlichen Daten. Den Standort nutzt sie nur, wenn du das ausdrücklich einschaltest; er bleibt auf deinem Handy.</p>
+    <p>Die App braucht kein Konto und sammelt keine persönlichen Daten. Den Standort nutzt sie nur, wenn du das ausdrücklich einschaltest; er bleibt auf deinem Handy. Details in der <a href="./datenschutz.html">Datenschutzerklärung</a>.</p>
     <p>Hattest du schon eine frühere Test-Version von Atemwetter? Dann diese bitte zuerst deinstallieren.</p>
   </section>
 
@@ -70,7 +67,8 @@ small{font-size:.85rem}
     <div class="qr"><img src="./android-qr.svg" alt="QR-Code zu dieser Seite" width="150" height="150"><p class="muted"><small>Am Computer? QR-Code mit dem Handy scannen, um diese Seite dort zu öffnen.</small></p></div>
   </section>
 
-  <p class="muted"><small>Daten: GeoSphere Austria (CC BY 4.0), Copernicus Atmosphere Monitoring Service (CAMS). In Partnerschaft mit MAYOKA andersch gsund, Dornbirn.</small></p>
+  <p class="muted"><small>Daten: GeoSphere Austria (CC BY 4.0); enthält veränderte Informationen des Copernicus Atmosphere Monitoring Service 2026. Atemwetter wird betrieben von MAYOKA andersch gsund OG, Dornbirn.</small></p>
+  <p><small><a href="./impressum.html">Impressum</a> · <a href="./datenschutz.html">Datenschutz</a></small></p>
 </main>
 </body>
 </html>

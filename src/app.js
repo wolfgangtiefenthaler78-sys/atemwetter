@@ -1,4 +1,5 @@
 /* Atemwetter – Oberfläche. Daten und Speichern kommen über `api` (src/data.js). */
+import qrcode from 'qrcode-generator';
 export function startApp(D, api){
 const $ = id => document.getElementById(id);
 const STATE = D.state;
@@ -220,7 +221,7 @@ function renderContent(){
   const tip = STATE.tip || {}, p = STATE.partner || {};
   $('tip-title').textContent = tip.title || '';
   $('tip-text').textContent = tip.text || '';
-  $('p-name').textContent = p.name ? 'Partner · ' + p.name : 'Partner';
+  $('p-name').textContent = p.name ? 'Partner-Angebot · ' + p.name : 'Partner-Angebot';
   $('p-head').textContent = p.headline || '';
   $('p-logo').hidden = !/mayoka/i.test(p.name || '');
   $('p-text').textContent = p.text || '';
@@ -240,7 +241,6 @@ function renderContent(){
   const fa = $('foot-actions'); fa.innerHTML = '';
   if(/^https:\/\/\S+$/.test(STATE.appLink||'')){ const b = mk('button','linkish','Link zur App kopieren und weiterempfehlen'); b.type='button'; b.addEventListener('click', ()=> (window.__AWNative && window.__AWNative.share) ? window.__AWNative.share(STATE.appLink) : copyText(STATE.appLink, b, null, 'Link kopiert – danke fürs Weitersagen')); fa.appendChild(b); }
   if(p.name){ const b = mk('button','linkish','Kontakt ' + (short||'Partner')); b.type='button'; b.addEventListener('click', goPartner); fa.appendChild(b); }
-  $('f-partner').textContent = p.name ? 'Atemwetter ist ein Service in Partnerschaft mit ' + p.name + '.' : '';
 }
 $('p-copy').addEventListener('click', async () => {
   const code = $('p-code').textContent;
@@ -375,9 +375,16 @@ function renderQR(){
   const link = $('d-link').value.trim(), box = $('qr');
   box.innerHTML = '';
   const ok = /^https:\/\/\S+$/.test(link);
-  box.hidden = !ok || typeof QRCode === 'undefined';
+  box.hidden = !ok;
   $('d-qr-save').hidden = box.hidden;
-  if(!box.hidden) new QRCode(box, {text:link, width:220, height:220, colorDark:'#17262b', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
+  if(!box.hidden){
+    const q = qrcode(0, 'M'); q.addData(link); q.make();
+    const n = q.getModuleCount(), cell = Math.max(2, Math.floor(220 / n)), c = document.createElement('canvas');
+    c.width = c.height = n * cell; const g = c.getContext('2d');
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#17262b';
+    for(let r = 0; r < n; r++) for(let k = 0; k < n; k++) if(q.isDark(r, k)) g.fillRect(k * cell, r * cell, cell, cell);
+    box.appendChild(c);
+  }
   $('d-qr-status').textContent = link && !ok ? 'Der Link muss mit https:// beginnen.' : '';
 }
 $('d-link').addEventListener('input', renderQR);

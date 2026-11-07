@@ -169,6 +169,7 @@ table.codes td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-alig
 .hint .x{position:absolute;top:6px;right:8px;border:0;background:none;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer;padding:4px 6px;border-radius:6px}
 .cta-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .phone{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.foot-legal{display:flex;gap:16px;flex-wrap:wrap;font-weight:700}
 .foot-actions{display:flex;gap:16px;flex-wrap:wrap;padding-top:6px;font-size:.88rem}
 .cols{display:flex;flex-direction:column;gap:32px;min-width:0}
 .col{display:flex;flex-direction:column;gap:32px;min-width:0}

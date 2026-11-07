@@ -1,0 +1,27 @@
+/* Gemeinsame Gestaltung für Datenschutz, Impressum und Download-Seite (ohne externe Schriften) */
+:root{--bg:#eef2f1;--surface:#f8faf9;--ink:#17262b;--muted:#56676c;--line:#cfd9d8;--accent:#2f5d8a;--accent-ink:#fff;--accent-soft:#dfe8f1;--warn-soft:#fbf1dc}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn-soft:#2c2617;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn-soft:#2c2617;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:17px;line-height:1.6;overflow-wrap:break-word}
+main{max-width:720px;margin:0 auto;padding:28px 16px 56px;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(1.9rem,7vw,2.6rem);letter-spacing:-.02em}
+h2{font-size:1.3rem;margin-top:8px}
+h3{font-size:1.05rem}
+p,ul,ol,dl{margin:0}
+ul,ol{padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+a{color:var(--accent)}
+section{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.back{font-weight:700;text-decoration:none;align-self:flex-start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.note{background:var(--warn-soft);border-color:transparent}
+.muted{color:var(--muted)}
+small{font-size:.86rem}
+dl{display:grid;grid-template-columns:minmax(0,12em) minmax(0,1fr);gap:6px 14px}
+dt{color:var(--muted)}
+dd{margin:0}
+@media (max-width:520px){dl{grid-template-columns:1fr;gap:2px}dd{margin-bottom:8px}}
+nav.legal{display:flex;gap:16px;flex-wrap:wrap;font-size:.92rem;border-top:1px solid var(--line);padding-top:14px}
