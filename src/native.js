@@ -87,17 +87,26 @@ export function initNative(){
         if(near) days.forEach(d => { const nd2 = (near.days || []).find(x => x.date === d.date); if(nd2){ d.pollen = nd2.pollen; d.pollen_hourly = nd2.pollen_hourly; } });
         if(statusEl) statusEl.textContent = 'Live-Daten für deinen genauen Standort' + (near && nd < 25 ? ' (bei ' + near.name + ')' : '') + '.';
       } catch(e){
-        if(statusEl){ statusEl.className='status err'; statusEl.textContent = 'Für deinen Standort gibt es gerade keine Daten (Abdeckung: Mitteleuropa). Angezeigt wird der nächstgelegene Ort.'; }
+        if(statusEl){ statusEl.className='status'; statusEl.textContent = near ? 'Standort erkannt. Angezeigt wird der nächste Ort: ' + near.name + ' (etwa ' + Math.max(1, Math.round(nd)) + ' km). Live-Daten für den genauen Punkt sind gerade nicht erreichbar.' : 'Für deinen Standort gibt es gerade keine Daten.'; }
         if(near){ AW.setPlace(near.id, true); return; }
       }
       AW.setPlace('gps', true);
     },
-    getPosition(ok, fail){
+    async getPosition(ok, fail, opts){
+      const o = Object.assign({enableHighAccuracy:false, timeout:15000, maximumAge:1800000}, opts || {});
       const G = cap().Geolocation;
-      if(!G){ navigator.geolocation.getCurrentPosition(ok, fail, {timeout:12000, maximumAge:1800000}); return; }
-      G.getCurrentPosition({enableHighAccuracy:false, timeout:15000, maximumAge:1800000})
+      if(!G){ navigator.geolocation.getCurrentPosition(ok, fail, o); return; }
+      const why = e => String(e && (e.code ? e.code + ' ' : '') + (e && e.message || e || ''));
+      try {
+        let perm = await G.checkPermissions();
+        if(perm.location !== 'granted' && perm.coarseLocation !== 'granted') perm = await G.requestPermissions({permissions:['location','coarseLocation']});
+        if(perm.location !== 'granted' && perm.coarseLocation !== 'granted') return fail({code:1, detail:'Berechtigung: ' + perm.location});
+      } catch(e){
+        if(/disabled|not enabled|services/i.test(why(e))) return fail({code:2, detail:why(e)});
+      }
+      G.getCurrentPosition(o)
         .then(p => ok({coords:{latitude:p.coords.latitude, longitude:p.coords.longitude}}))
-        .catch(e => fail({code: /denied|permission/i.test(String(e && (e.message || e))) ? 1 : 2}));
+        .catch(e => { const t = why(e); fail({code: /denied|permission/i.test(t) ? 1 : (/time ?out|timeout/i.test(t) ? 3 : 2), detail:t}); });
     },
     share(url){
       const S = cap().Share;

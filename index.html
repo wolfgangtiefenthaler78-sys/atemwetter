@@ -17,7 +17,7 @@
 <p class="load-error" id="load-error" hidden>Die Daten können gerade nicht geladen werden. Bitte später erneut öffnen.</p>
 <div class="wrap" id="app">
   <header class="top">
-    <div class="brand"><b>Atemwetter</b><button class="place-btn" id="place-btn" type="button" aria-haspopup="dialog" aria-expanded="false"><span id="place-label">Dornbirn</span><span aria-hidden="true">▾</span></button></div>
+    <div class="brand"><b>Atemwetter</b><button class="place-btn" id="place-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort ändern"><svg class="pin" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg><span id="place-label">Dornbirn</span><span class="change">ändern</span></button></div>
     <nav class="tabs" role="tablist" aria-label="Ansicht">
       <button id="tab-heute" role="tab" aria-selected="true" data-view="heute">Heute</button>
       <button id="tab-atmen" role="tab" aria-selected="false" data-view="atmen">Atmen</button>
@@ -30,8 +30,9 @@
   <section class="picker" id="picker" hidden aria-label="Ort wählen">
     <div class="picker-head"><h2>Ort wählen</h2><button class="btn ghost small" id="picker-close" type="button">Schließen</button></div>
     <div class="auto" id="auto-box" hidden>
-      <label class="check" for="auto-loc"><input type="checkbox" id="auto-loc"><span><b>Standort automatisch verwenden</b><br><small class="muted">Die App wählt den nächstgelegenen Ort aus der Liste. Dein Standort bleibt auf deinem Gerät und wird nicht gespeichert oder übertragen. Du kannst das jederzeit wieder abschalten.</small></span></label>
-      <p class="status" id="auto-status"></p>
+      <button class="btn" id="locate-now" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06ZM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>Meinen Standort verwenden</button>
+      <label class="check" for="auto-loc"><input type="checkbox" id="auto-loc"><span><b>Bei jedem Start automatisch</b><br><small class="muted">Die App wählt den nächstgelegenen Ort aus der Liste. Dein Standort bleibt auf deinem Gerät und wird nicht gespeichert oder übertragen. Du kannst das jederzeit wieder abschalten.</small></span></label>
+      <p class="status" id="auto-status" aria-live="polite"></p>
     </div>
     <label class="f" for="place-search">Ort suchen<input id="place-search" placeholder="z. B. Feldkirch, Wien, St. Gallen" autocomplete="off"></label>
     <div class="place-list" id="place-list" role="listbox" aria-label="Orte"></div>

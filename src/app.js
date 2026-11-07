@@ -39,6 +39,7 @@ function renderToday(){
   const b = band(t.aqi_max);
   $('hero-date').textContent = curPlace().name + ' · ' + dayName(t.date) + (autoInfo ? ' · ' + autoInfo : '');
   $('place-label').textContent = curPlace().name;
+  $('place-btn').setAttribute('aria-label','Ort: '+curPlace().name+(autoInfo?' (automatisch)':'')+' – ändern');
   $('verdict').textContent = b.name;
   $('aqi-dot').style.background = b.color;
   $('aqi-val').textContent = t.aqi_max;
@@ -490,33 +491,58 @@ $('place-btn').addEventListener('click', ()=> $('picker').hidden ? openPicker() 
 $('picker-close').addEventListener('click', closePicker);
 
 function distKm(a,b,c,d){ const R=6371, t=x=>x*Math.PI/180; const h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-function locate(){
-  const st = $('auto-status'); st.className='status'; st.textContent='Standort wird ermittelt …';
-  const getPos = (window.__AWNative && window.__AWNative.getPosition) || ((ok, fail, o) => navigator.geolocation.getCurrentPosition(ok, fail, o));
-  getPos(pos=>{
-    const {latitude:la, longitude:lo} = pos.coords;
-    let best=null, bd=1e9; PLACES.forEach(p=>{ const d=distKm(la,lo,p.lat,p.lon); if(d<bd){bd=d;best=p;} });
-    if(!best) return;
-    if(window.__AWNative && window.__AWNative.onPosition){ autoInfo = 'automatisch'; window.__AWNative.onPosition(la, lo, st); return; }
-    autoInfo = 'automatisch'; setPlace(best.id, true);
-    st.textContent = bd > 60 ? 'Nächster Ort in der Liste: '+best.name+' ('+Math.round(bd)+' km entfernt). Die Werte können für deinen Standort abweichen.' : 'Automatisch gewählt: '+best.name+' (etwa '+Math.max(1,Math.round(bd))+' km entfernt).';
-  }, err=>{
-    st.className='status err';
-    st.textContent = err && err.code===1 ? 'Standortzugriff wurde nicht erlaubt. Wähle deinen Ort bitte aus der Liste.' : 'Standort konnte gerade nicht ermittelt werden. Wähle deinen Ort bitte aus der Liste.';
-    if(err && err.code===1){ $('auto-loc').checked=false; LS.set('aw-auto',null); }
-  }, {enableHighAccuracy:false, timeout:12000, maximumAge:30*60*1000});
+const IS_APP = !!(window.__AWNative && window.__AWNative.getPosition);
+function geoHelp(code){
+  if(code===1) return IS_APP
+    ? 'Die App darf deinen Standort nicht verwenden. Erlauben: Android-Einstellungen › Apps › Atemwetter › Berechtigungen › Standort › „Nur während der Nutzung“.'
+    : 'Dein Browser blockiert den Standort für diese Seite. Erlauben: auf das Schloss- oder Einstellungs-Symbol links neben der Adresse tippen › Standort › Zulassen, dann die Seite neu laden.';
+  if(code===2) return 'Der Standort ist am Gerät gerade nicht verfügbar. Ist der Standortdienst (GPS) eingeschaltet? Am Handy: von oben wischen › „Standort“ antippen.';
+  return 'Die Standortbestimmung hat zu lange gedauert. Am besten im Freien oder mit eingeschaltetem WLAN nochmals versuchen.';
 }
+function retryLink(st){ const b=document.createElement('button'); b.type='button'; b.className='linkish'; b.textContent='Nochmals versuchen'; b.style.marginLeft='6px'; b.addEventListener('click', ()=>locate(true)); st.append(' ', b); }
+function locate(manual){
+  const st = $('auto-status'); st.className='status'; st.textContent='Standort wird ermittelt …';
+  $('locate-now').disabled = true;
+  const getPos = IS_APP ? window.__AWNative.getPosition : ((ok, fail, o) => navigator.geolocation.getCurrentPosition(ok, fail, o));
+  const done = pos=>{
+    $('locate-now').disabled = false;
+    const {latitude:la, longitude:lo} = pos.coords;
+    let best=null, bd=1e9; PLACES.forEach(p=>{ if(p.id==='gps') return; const d=distKm(la,lo,p.lat,p.lon); if(d<bd){bd=d;best=p;} });
+    if(!best) return;
+    autoInfo = 'automatisch';
+    if(window.__AWNative && window.__AWNative.onPosition){ window.__AWNative.onPosition(la, lo, st); }
+    else {
+      setPlace(best.id, true);
+      st.textContent = bd > 60 ? 'Nächster Ort in der Liste: '+best.name+' ('+Math.round(bd)+' km entfernt). Die Werte können für deinen Standort abweichen.' : 'Gefunden: '+best.name+' (etwa '+Math.max(1,Math.round(bd))+' km entfernt).';
+    }
+    if(manual) setTimeout(closePicker, 1600);
+  };
+  const failed = err=>{
+    $('locate-now').disabled = false;
+    const code = err && err.code || 2;
+    st.className='status err'; st.textContent = geoHelp(code);
+    if(code!==1) retryLink(st);
+    if(err && err.detail){ const d=document.createElement('small'); d.className='muted'; d.style.display='block'; d.textContent='Technischer Hinweis: '+err.detail; st.appendChild(d); }
+    if(code===1){ $('auto-loc').checked=false; LS.set('aw-auto',null); }
+  };
+  // erst schnell und sparsam (WLAN/Mobilfunk), dann – falls das nicht klappt – mit GPS
+  getPos(done, err=>{
+    if(err && err.code===1) return failed(err);
+    getPos(done, failed, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
+  }, {enableHighAccuracy:false, timeout:10000, maximumAge:30*60*1000});
+}
+$('locate-now').addEventListener('click', ()=>locate(true));
 $('auto-loc').addEventListener('change', ()=>{
-  if($('auto-loc').checked){ LS.set('aw-auto','1'); locate(); }
+  if($('auto-loc').checked){ LS.set('aw-auto','1'); locate(false); }
   else { LS.set('aw-auto',null); autoInfo=''; $('auto-status').textContent='Automatik ausgeschaltet.'; setPlace(LS.get('aw-place') || AIR.default || PLACES[0].id, true); }
 });
 async function initGeo(){
-  if(!('geolocation' in navigator) && !(window.__AWNative && window.__AWNative.getPosition)) return;
-  let state = 'prompt';
-  try{ if(!(window.__AWNative) && navigator.permissions && navigator.permissions.query){ state = (await navigator.permissions.query({name:'geolocation'})).state; } }catch(e){}
-  if(state === 'denied') return;   // in dieser Umgebung nicht verfügbar: Schalter bleibt verborgen
+  if(!('geolocation' in navigator) && !IS_APP) return;
   $('auto-box').hidden = false;
-  if(LS.get('aw-auto')==='1'){ $('auto-loc').checked = true; locate(); }
+  let state = 'prompt';
+  try{ if(!IS_APP && navigator.permissions && navigator.permissions.query){ state = (await navigator.permissions.query({name:'geolocation'})).state; } }catch(e){}
+  if(state === 'denied'){ $('auto-status').className='status err'; $('auto-status').textContent = geoHelp(1); return; }
+  if(LS.get('aw-auto')==='1'){ $('auto-loc').checked = true; locate(false); }
 }
 
 renderToday(); renderContent(); renderEx(); renderCopd(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
