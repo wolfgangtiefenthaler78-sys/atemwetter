@@ -8,7 +8,7 @@ const SHELL = JSON.parse(readFileSync('data/app-meta.json', 'utf8')).minShell; /
 const html = readFileSync('dist-single/index.html', 'utf8');
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
 const b64 = Buffer.from(html, 'utf8').toString('base64');
-const loader = `<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0;background:#2f5d8a}</style></head><body>
+const loader = `<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0;background:#f7ac38}</style></head><body>
 <script id="builtin" type="text/plain">${b64}</script>
 <script>
 window.__AW_SHELL = ${SHELL};
