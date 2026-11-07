@@ -1,0 +1,63 @@
+name: Android-App veröffentlichen
+
+# Baut die unterschriebene App und stellt sie unter einem festen Link bereit:
+#   https://github.com/wolfgangtiefenthaler78-sys/atemwetter/releases/latest/download/atemwetter.apk
+# Dazu die Download-Seite: https://wolfgangtiefenthaler78-sys.github.io/atemwetter/android.html
+# Nötig sind die Secrets ANDROID_KEYSTORE_B64 und ANDROID_KEYSTORE_PASSWORD.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Schlüssel prüfen
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KS" ] || [ -z "$PW" ]; then
+            echo "::error::Secrets ANDROID_KEYSTORE_B64 und ANDROID_KEYSTORE_PASSWORD fehlen (GitHub › Settings › Secrets and variables › Actions)."
+            exit 1
+          fi
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/release.jks"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run android
+      - name: App bauen und unterschreiben
+        working-directory: android
+        env:
+          AW_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          AW_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          AW_VERSION_CODE: ${{ github.run_number }}
+          AW_VERSION_NAME: 2.0.${{ github.run_number }}
+        run: |
+          ./gradlew assembleRelease bundleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../atemwetter.apk
+          cp app/build/outputs/bundle/release/app-release.aab ../atemwetter.aab
+      - name: Unterschrift prüfen
+        run: |
+          "$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME"/build-tools | sort -V | tail -1)/apksigner verify --print-certs atemwetter.apk | head -3
+      - name: Als „neueste Version“ veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-2.0.${{ github.run_number }}
+          name: Atemwetter für Android 2.0.${{ github.run_number }}
+          make_latest: true
+          body: |
+            Atemwetter für Android. Installieren: atemwetter.apk am Handy öffnen.
+            Anleitung: https://wolfgangtiefenthaler78-sys.github.io/atemwetter/android.html
+          files: |
+            atemwetter.apk
+            atemwetter.aab

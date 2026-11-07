@@ -7,8 +7,9 @@ android {
         applicationId "at.mayoka.atemwetter"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Fortlaufende Nummer vom GitHub-Bau, damit sich neue APKs über alte installieren lassen
+        versionCode (System.getenv("AW_VERSION_CODE") ?: "1").toInteger()
+        versionName System.getenv("AW_VERSION_NAME") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +17,20 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Unterschrift für Veröffentlichungen: Schlüssel nur als GitHub-Secrets (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD)
+    signingConfigs {
+        release {
+            if (System.getenv("AW_KEYSTORE_FILE")) {
+                storeFile file(System.getenv("AW_KEYSTORE_FILE"))
+                storePassword System.getenv("AW_KEYSTORE_PASSWORD")
+                keyAlias "atemwetter"
+                keyPassword System.getenv("AW_KEYSTORE_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (System.getenv("AW_KEYSTORE_FILE")) { signingConfig signingConfigs.release }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

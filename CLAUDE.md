@@ -21,7 +21,8 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergi
 | Öffentliche Verbindungsdaten | `src/config.js` (nur URL + anon-Schlüssel) |
 | Datenbank-Schema und Zugriffsregeln | `supabase/migrations/*.sql`, Startdaten `supabase/seed.sql` |
 | Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py` |
-| Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-APK) |
+| Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-Test-APK, `android-release.yml` = unterschriebene App als GitHub-Release) |
+| Download-Seite Android | `public/android.html` (fester Link `releases/latest/download/atemwetter.apk`) |
 | Android (Capacitor 7, `at.mayoka.atemwetter`) | `android/`, Lader `scripts/build-android.mjs` |
 
 ## Datenbank (Supabase, Region Frankfurt)
@@ -35,7 +36,7 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergi
   Jede neue Tabelle bekommt RLS mit Regeln. Nach Änderungen die Advisors (Sicherheit, Performance) prüfen.
 
 ## Geheimnisse – nie in Code, Commits oder Antworten
-- `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus): nur als GitHub-Secrets.
+- `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus), `ANDROID_KEYSTORE_B64`/`ANDROID_KEYSTORE_PASSWORD` (App-Signatur, Sicherung bei Wolfgang): nur als GitHub-Secrets.
 - Im Code steht ausschließlich der öffentliche anon-Schlüssel in `src/config.js`.
 
 ## Arbeiten
