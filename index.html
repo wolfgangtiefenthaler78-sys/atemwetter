@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atemwetter</title>
+<meta name="description" content="Luftqualität, Pollen, Atemübungen und Tageshinweise für COPD und Allergie – für deinen Ort in Österreich und dem Rheintal.">
+<meta name="theme-color" content="#2f5d8a">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<body>
+<div id="aw-root">
+<p class="load-error" id="load-error" hidden>Die Daten können gerade nicht geladen werden. Bitte später erneut öffnen.</p>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand"><b>Atemwetter</b><button class="place-btn" id="place-btn" type="button" aria-haspopup="dialog" aria-expanded="false"><span id="place-label">Dornbirn</span><span aria-hidden="true">▾</span></button></div>
+    <nav class="tabs" role="tablist" aria-label="Ansicht">
+      <button id="tab-heute" role="tab" aria-selected="true" data-view="heute">Heute</button>
+      <button id="tab-atmen" role="tab" aria-selected="false" data-view="atmen">Atmen</button>
+      <button id="tab-copd" role="tab" aria-selected="false" data-view="copd">COPD</button>
+      <button id="tab-allergie" role="tab" aria-selected="false" data-view="allergie">Allergie</button>
+    </nav>
+    <button class="btn ghost small" id="open-dash" hidden>Verwalten</button>
+  </header>
+
+  <section class="picker" id="picker" hidden aria-label="Ort wählen">
+    <div class="picker-head"><h2>Ort wählen</h2><button class="btn ghost small" id="picker-close" type="button">Schließen</button></div>
+    <div class="auto" id="auto-box" hidden>
+      <label class="check" for="auto-loc"><input type="checkbox" id="auto-loc"><span><b>Standort automatisch verwenden</b><br><small class="muted">Die App wählt den nächstgelegenen Ort aus der Liste. Dein Standort bleibt auf deinem Gerät und wird nicht gespeichert oder übertragen. Du kannst das jederzeit wieder abschalten.</small></span></label>
+      <p class="status" id="auto-status"></p>
+    </div>
+    <label class="f" for="place-search">Ort suchen<input id="place-search" placeholder="z. B. Feldkirch, Wien, St. Gallen" autocomplete="off"></label>
+    <div class="place-list" id="place-list" role="listbox" aria-label="Orte"></div>
+    <p class="muted" style="font-size:.85rem">Dein Ort fehlt? Wähle den nächstgelegenen. Weitere Orte lassen sich ergänzen.</p>
+  </section>
+
+  <main id="v-heute" class="block" style="gap:32px">
+    <section class="hero" aria-labelledby="verdict">
+      <div class="eyebrow" id="hero-date">Atemwetter heute</div>
+      <div class="verdict"><h1 id="verdict">–</h1><span class="aqi-pill"><span class="dot" id="aqi-dot"></span><span>Europäischer Luftqualitätsindex <b class="num" id="aqi-val">–</b></span></span></div>
+      <p class="lede" id="lede"></p>
+      <div class="scale" aria-hidden="true"><div class="bar" id="scale-bar"></div><div class="marker" id="scale-marker"></div><div class="labels"><span>gut</span><span></span><span>mäßig</span><span></span><span>schlecht</span><span></span></div></div>
+    </section>
+
+    <div class="cols">
+    <div class="col">
+    <section class="block" aria-labelledby="h-stoffe">
+      <h2 id="h-stoffe">Was heute in der Luft ist</h2>
+      <div class="rows" id="pollutants"></div>
+      <p class="muted" style="font-size:.85rem">Balken: Anteil am WHO-Richtwert von 2021. Rot heißt: Richtwert überschritten.</p>
+    </section>
+
+    <section class="block" aria-labelledby="h-verlauf">
+      <h2 id="h-verlauf">Luftqualität im Tagesverlauf</h2>
+      <div class="spark" id="spark"></div>
+      <div class="days" id="days"></div>
+    </section>
+    </div>
+    <div class="col">
+    <section class="note" id="inv-box" aria-labelledby="h-inv">
+      <div class="eyebrow">Talwetter</div>
+      <h2 id="h-inv">Luftaustausch</h2>
+      <p id="inv-text"></p>
+      <p class="muted num" id="inv-num" style="font-size:.85rem"></p>
+    </section>
+    <div class="hint" id="hint-heute" hidden></div>
+
+    <section class="block" aria-labelledby="h-pollen">
+      <h2 id="h-pollen">Pollen</h2>
+      <div class="rows" id="pollen"></div>
+      <div><button class="btn ghost small" id="to-allergie" type="button">Allergie-Check öffnen</button></div>
+    </section>
+
+    <section class="tip" aria-labelledby="tip-title">
+      <div class="eyebrow">Tipp der Woche</div>
+      <h3 id="tip-title"></h3>
+      <p id="tip-text" style="white-space:pre-line"></p>
+    </section>
+
+    <section class="partner" aria-labelledby="p-head">
+      <div class="eyebrow" id="p-name"></div>
+      <h3 id="p-head"></h3>
+      <p id="p-text" style="white-space:pre-line"></p>
+      <div class="code" id="p-codebox"><span>Code beim Besuch nennen:</span><span class="num" id="p-code"></span><button class="btn small ghost" id="p-copy" type="button">Kopieren</button></div>
+      <p class="muted" id="p-note" style="font-size:.88rem"></p>
+      <p id="p-contact" style="font-size:.95rem"></p>
+      <div class="cta-row" id="p-ctas"></div>
+    </section>
+    </div>
+    </div>
+  </main>
+
+  <main id="v-atmen" class="block" hidden style="gap:24px">
+    <section class="block">
+      <div class="eyebrow">Geführte Atemübungen</div>
+      <h1 style="font-size:2rem">Einen Moment durchatmen</h1>
+      <div class="chips" id="ex-chips" role="group" aria-label="Übung wählen"></div>
+    </section>
+    <div class="cols cols-atmen">
+    <section class="breath" aria-live="polite">
+      <div class="orb-box"><div class="orb-ring"></div><div class="orb" id="orb"></div><div class="orb-text"><b id="phase">Bereit</b><span id="count"></span></div></div>
+      <div class="controls">
+        <label for="dur" class="muted" style="font-size:.9rem">Dauer</label>
+        <select id="dur"><option value="60">1 Minute</option><option value="180" selected>3 Minuten</option><option value="300">5 Minuten</option></select>
+        <button class="btn" id="start" type="button">Starten</button>
+      </div>
+      <p class="muted num" id="remain"></p>
+      <div class="hint" id="hint-atmen" hidden></div>
+    </section>
+    <div class="col">
+    <section class="howto"><h2 id="ex-name"></h2><p id="ex-desc"></p><ol id="ex-steps"></ol></section>
+    <section class="evidence"><span class="badge" id="ex-level"></span><p id="ex-ev"></p><p id="ex-src" style="font-size:.85rem"></p></section>
+    </div>
+    </div>
+    <p class="muted" style="font-size:.88rem">Bei Schwindel, Kribbeln oder zunehmender Atemnot die Übung beenden und normal weiteratmen. Atemübungen ersetzen keine ärztliche Behandlung; verordnete Medikamente und Notfallpläne gelten weiter.</p>
+  </main>
+
+  <main id="v-copd" class="block" hidden style="gap:30px">
+    <section class="hero" aria-labelledby="copd-verdict">
+      <div class="eyebrow" id="copd-date">Mit COPD durch den Tag</div>
+      <div class="verdict"><h1 id="copd-verdict">–</h1><span class="aqi-pill"><span class="dot" id="copd-dot"></span><span id="copd-pill">Tageshinweis</span></span></div>
+      <p class="lede" id="copd-lede"></p>
+    </section>
+
+    <section class="block" aria-labelledby="h-copd-why">
+      <h2 id="h-copd-why">Was heute zählt</h2>
+      <div class="rows" id="copd-factors"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-copd-pos">
+      <h2 id="h-copd-pos">Wenn die Luft knapp wird</h2>
+      <p class="muted">Stellungen, die das Atmen erleichtern, kombiniert mit der Lippenbremse.</p>
+      <div class="days" id="copd-pos"></div>
+      <div><button class="btn" id="copd-to-lippen" type="button">Lippenbremse mit Anleitung üben</button></div>
+    </section>
+
+    <section class="note inv-stark" aria-labelledby="h-copd-warn">
+      <div class="eyebrow">Warnzeichen</div>
+      <h2 id="h-copd-warn">Wann ärztliche Hilfe nötig ist</h2>
+      <p><b>Praxis kontaktieren oder deinen Aktionsplan befolgen</b>, wenn über mehr als einen Tag die Atemnot deutlich stärker ist als sonst, mehr oder zäherer Auswurf kommt, der Auswurf gelb oder grün wird oder Fieber dazukommt.</p>
+      <p><b>Notruf 144</b> bei schwerer Atemnot in Ruhe, wenn Sprechen kaum möglich ist, bei bläulichen Lippen, Benommenheit oder Verwirrtheit, oder bei Schmerzen in der Brust.</p>
+    </section>
+
+    <section class="evidence" aria-labelledby="h-copd-ev">
+      <span class="badge">Was die Forschung sagt</span>
+      <h2 id="h-copd-ev" style="font-size:1.05rem">Luftqualität und COPD</h2>
+      <p>Eine Metaanalyse von 59 Studien fand für alle untersuchten Schadstoffe einen Zusammenhang zwischen kurzfristig erhöhter Belastung und dem Risiko akuter COPD-Verschlechterungen. Der Effekt pro 10 µg/m³ ist für den Einzelnen klein (wenige Prozent), summiert sich aber über viele belastete Tage. Es handelt sich um Beobachtungsstudien, keine Experimente.</p>
+      <p>Zu den Atemstellungen: In einer kleinen Messstudie mit 16 Personen mit fortgeschrittener COPD war die selbst gewählte Lieblingsstellung, oft aufrecht oder vorgebeugt sitzend, mit geringerer Atemarbeit und weniger Atemnot verbunden. Das ist ein Hinweis auf den Mechanismus, kein Wirksamkeitsnachweis.</p>
+      <p style="font-size:.85rem">Quellen: Li et al. 2016, International Journal of COPD, <a target="_blank" rel="noopener" href="https://doi.org/10.2147/COPD.S122282">doi.org/10.2147/COPD.S122282</a>; Elbehairy et al. 2026, European Respiratory Journal, <a target="_blank" rel="noopener" href="https://doi.org/10.1183/13993003.01348-2025">doi.org/10.1183/13993003.01348-2025</a></p>
+    </section>
+    <p class="muted" style="font-size:.88rem">Diese Seite gibt allgemeine Hinweise. Dein persönlicher Aktionsplan und die Absprachen mit deiner Lungenfachärztin oder deinem Lungenfacharzt gehen immer vor.</p>
+    <div class="hint" id="hint-copd" hidden></div>
+  </main>
+
+  <main id="v-allergie" class="block" hidden style="gap:30px">
+    <section class="hero" aria-labelledby="al-verdict">
+      <div class="eyebrow" id="al-date">Pollen-Check</div>
+      <div class="verdict"><h1 id="al-verdict">–</h1><span class="aqi-pill"><span class="dot" id="al-dot"></span><span id="al-pill"></span></span></div>
+      <p class="lede" id="al-lede"></p>
+    </section>
+
+    <section class="block" aria-labelledby="h-al-mine">
+      <h2 id="h-al-mine">Meine Allergien</h2>
+      <p class="muted" style="font-size:.92rem">Tippe an, worauf du reagierst. Die Auswahl bleibt nur auf deinem Gerät gespeichert.</p>
+      <div class="chips" id="al-chips" role="group" aria-label="Pollenarten wählen"></div>
+    </section>
+
+    <section class="block" id="al-days-sec" aria-labelledby="h-al-days">
+      <h2 id="h-al-days">Die nächsten drei Tage</h2>
+      <div class="tablebox"><table class="codes al-table" id="al-table"></table></div>
+      <p class="muted" style="font-size:.85rem">Tageshöchstwerte in Pollenkörnern pro m³ Luft, Modellwerte. Die Einteilung gering, mäßig, hoch ist grob und je Pollenart verschieden, weil schon wenige Ambrosia- oder Beifußpollen Beschwerden auslösen können.</p>
+    </section>
+
+    <section class="note" id="al-times" aria-labelledby="h-al-times">
+      <div class="eyebrow">Tagesplanung</div>
+      <h2 id="h-al-times">Lüften und Rausgehen</h2>
+      <p id="al-times-text"></p>
+    </section>
+
+    <section class="block" aria-labelledby="h-al-season">
+      <h2 id="h-al-season">Wann was fliegt</h2>
+      <div class="tablebox"><div class="season" id="al-season"></div></div>
+      <p class="muted" style="font-size:.85rem">Typische Blütezeiten in Mitteleuropa. Je nach Witterung und Höhenlage beginnt die Saison früher oder später. Hasel und Esche sind wichtige Frühblüher, in der Copernicus-Prognose aber nicht enthalten.</p>
+    </section>
+
+    <section class="block" aria-labelledby="h-al-tips">
+      <h2 id="h-al-tips">Alltag in der Pollenzeit</h2>
+      <ul class="al-tips">
+        <li>Abends Haare waschen, damit keine Pollen ins Kopfkissen gelangen.</li>
+        <li>Getragene Kleidung nicht im Schlafzimmer ablegen.</li>
+        <li>Wäsche an Tagen mit hoher Belastung drinnen trocknen.</li>
+        <li>Nach Regen ist die Luft oft für einige Zeit pollenärmer, ein guter Moment für Spaziergänge.</li>
+        <li>Pollenschutzgitter an Schlafzimmerfenstern und Pollenfilter im Auto helfen, die Belastung drinnen niedrig zu halten.</li>
+        <li>Eine Sonnenbrille schützt die Augen draußen etwas vor Pollen.</li>
+      </ul>
+    </section>
+
+    <section class="evidence" aria-labelledby="h-al-ev">
+      <span class="badge">Was die Forschung sagt</span>
+      <h2 id="h-al-ev" style="font-size:1.05rem">Nasenspülung mit Salzlösung</h2>
+      <p>Eine Metaanalyse von neun randomisierten Studien (645 Teilnehmende) fand, dass Nasenspülungen mit 3-prozentiger Salzlösung Nasenbeschwerden und den Bedarf an Antihistaminika bei allergischem Schnupfen verringerten. Gegenüber einer normalen 0,9-prozentigen Lösung zeigte sich beim Medikamentenbedarf kein klarer Unterschied, und die Ergebnisse der Erwachsenenstudien waren sehr uneinheitlich.</p>
+      <p>Eine Metaanalyse zu Kindern und Jugendlichen (sieben Studien, 462 Teilnehmende) kam zu einem ähnlichen Ergebnis, stufte die Sicherheit der Evidenz aber als niedrig bis sehr niedrig ein, weil viele Studien ein hohes Verzerrungsrisiko hatten. Nebenwirkungen waren selten und leicht.</p>
+      <p>Wichtig: Diese Studien untersuchen die Nasenspülung, nicht das Einatmen von Solenebel. Ergänzend zur ärztlichen Behandlung, nicht als Ersatz.</p>
+      <p style="font-size:.85rem">Quellen: Singh et al. 2025, Allergologia et Immunopathologia, <a target="_blank" rel="noopener" href="https://doi.org/10.15586/aei.v53i5.1409">doi.org/10.15586/aei.v53i5.1409</a>; Esmaeel et al. 2026, International Journal of Pediatric Otorhinolaryngology, <a target="_blank" rel="noopener" href="https://doi.org/10.1016/j.ijporl.2026.112973">doi.org/10.1016/j.ijporl.2026.112973</a></p>
+    </section>
+    <p class="muted" style="font-size:.88rem">Bei Atemnot, pfeifender Atmung oder Schwellungen im Gesicht sofort ärztliche Hilfe holen, im Notfall 144. Ob eine Allergie besteht und welche Behandlung passt, klärt eine Allergologin oder ein Allergologe. Ausführliche Pollenprognosen bietet der Österreichische Pollenwarndienst unter polleninformation.at.</p>
+    <div class="hint" id="hint-allergie" hidden></div>
+  </main>
+
+  <footer class="foot">
+    <span id="f-stand"></span>
+    <span>Daten: GeoSphere Austria, Data Hub (Lizenz CC BY 4.0), Prognosen der Luftgüte- und Wettermodelle für den gewählten Ort. Den Luftqualitätsindex berechnet Atemwetter selbst nach den überarbeiteten Bändern der Europäischen Umweltagentur. Pollen: Copernicus-Atmosphärendienst (CAMS), europäische Ensemble-Prognose, täglich aktualisiert. Modellwerte können von Messstationen abweichen; amtliche Messwerte veröffentlichen die Umweltbehörden der Länder.</span>
+    <span>Atemwetter gibt allgemeine Hinweise und ersetzt keine medizinische Beratung.</span>
+    <span id="f-partner"></span>
+    <div class="foot-actions" id="foot-actions"></div>
+    <span><button class="linkish" id="open-admin" type="button" style="font-weight:400;color:var(--muted)">Verwaltung</button></span>
+  </footer>
+</div>
+
+<section class="dash" id="dash" hidden aria-label="Verwalten">
+  <div class="wrap">
+    <div class="dash-head"><div><div class="eyebrow">Verwaltung</div><h1 style="font-size:1.8rem">Atemwetter verwalten</h1></div><div class="controls"><button class="btn ghost small" id="d-logout" type="button" hidden>Abmelden</button><button class="btn ghost small" id="close-dash" type="button">Zurück zur App</button></div></div>
+
+    <fieldset id="d-login"><legend>Anmelden</legend>
+      <p class="muted" style="font-size:.9rem">Die Verwaltung ist nur für freigeschaltete Konten. Du bekommst einen Anmeldelink per E-Mail.</p>
+      <label class="f">E-Mail-Adresse<input id="d-email" type="email" autocomplete="email" inputmode="email"></label>
+      <div class="controls" style="justify-content:flex-start"><button class="btn" id="d-send-link" type="button">Anmeldelink senden</button><span class="status" id="d-login-status"></span></div>
+    </fieldset>
+
+    <div id="d-admin" class="dash-admin" hidden>
+
+    <fieldset><legend>Tipp der Woche</legend>
+      <label class="f">Überschrift<input id="d-tip-title" maxlength="90"></label>
+      <label class="f">Text<textarea id="d-tip-text" maxlength="600"></textarea></label>
+      <div class="controls" style="justify-content:flex-start"><span class="status" id="d-suggest-status"></span></div>
+    </fieldset>
+
+    <fieldset><legend>Partner-Box</legend>
+      <div class="grid2">
+        <label class="f">Name<input id="d-p-name"></label>
+        <label class="f">Überschrift<input id="d-p-head"></label>
+      </div>
+      <label class="f">Text<textarea id="d-p-text"></textarea></label>
+      <div class="grid2">
+        <label class="f">Code für App-Nutzer<input id="d-p-code" maxlength="24"></label>
+        <label class="f">Hinweis zum Angebot<input id="d-p-note"></label>
+        <label class="f">Adresse / Kontakt<input id="d-p-contact"></label>
+        <label class="f">Website (https://…)<input id="d-p-url" inputmode="url"></label>
+        <label class="f">Telefon<input id="d-p-phone" inputmode="tel"></label>
+        <label class="f">Online-Buchung (https://…)<input id="d-p-booking" inputmode="url"></label>
+      </div>
+      <label class="f">Kurzer Hinweis für alle Bereiche<input id="d-p-hint" maxlength="120" placeholder="z. B. Eine ruhige Atempause im Sauerstoff-Sole-Inhalationsraum in Dornbirn."></label>
+      <label class="check" for="d-p-showhints"><input type="checkbox" id="d-p-showhints"><span>Dezente Hinweise anzeigen<br><small class="muted">Ein kleiner Hinweis je Bereich, als Partner-Angebot gekennzeichnet. In „Atmen“ verschwindet er während der Übung; in COPD und Allergie steht er unter den medizinischen Inhalten. Nutzer können jeden Hinweis für den Tag ausblenden.</small></span></label>
+    </fieldset>
+
+    <fieldset><legend>App-Link und QR-Code</legend>
+      <label class="f">Öffentlicher Link der App<input id="d-link" inputmode="url" placeholder="Link aus „Teilen“ einfügen"></label>
+      <div class="qr" id="qr" hidden></div>
+      <div class="controls" style="justify-content:flex-start"><button class="btn ghost small" id="d-qr-save" type="button" hidden>QR-Code als Bild speichern</button><span class="status" id="d-qr-status"></span></div>
+      <label class="f">Play-Store-Link der Android-App (sobald vorhanden)<input id="d-store" inputmode="url" placeholder="https://play.google.com/store/apps/details?id=at.mayoka.atemwetter"></label>
+    </fieldset>
+
+    <fieldset><legend>Android-App</legend>
+      <p class="muted" style="font-size:.9rem">Web-App und Android-App lesen Inhalte und Luftdaten direkt aus der Datenbank. Gespeicherte Änderungen erscheinen beim nächsten Öffnen überall. Neue Programmversionen lädt die Android-App selbst von der Website.</p>
+    </fieldset>
+
+    <div class="controls" style="justify-content:flex-start"><button class="btn" id="d-publish" type="button">Änderungen veröffentlichen</button><span class="status" id="d-pub-status"></span></div>
+
+    <fieldset><legend>Partner-Codes und Einlösungen</legend>
+      <p class="muted" style="font-size:.9rem">Jeder Partner bekommt einen eigenen Code für seine Flyer. Zähle hier mit, wie oft er an der Rezeption genannt wurde. Diese Liste sieht nur, wer die App bearbeiten darf.</p>
+      <div class="tablebox"><table class="codes"><thead><tr><th>Partner</th><th>Code</th><th>Einlösungen</th><th></th></tr></thead><tbody id="codes-body"></tbody></table></div>
+      <div class="empty" id="codes-empty">Noch keine Partner-Codes. Lege unten den ersten an, zum Beispiel für eine Arztpraxis oder Selbsthilfegruppe.</div>
+      <div class="grid2">
+        <label class="f">Partner<input id="c-name" placeholder="z. B. Lungenpraxis"></label>
+        <label class="f">Code<input id="c-code" placeholder="z. B. LUNGE24" maxlength="24"></label>
+      </div>
+      <div class="controls" style="justify-content:flex-start"><button class="btn ghost small" id="c-add" type="button">Code anlegen</button><span class="status" id="c-status"></span></div>
+    </fieldset>
+
+    <fieldset><legend>Luftdaten</legend>
+      <p id="d-air"></p>
+      <p class="muted" style="font-size:.9rem">Die Daten werden jeden Morgen automatisch neu eingespielt.</p>
+    </fieldset>
+    </div>
+  </div>
+</section>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

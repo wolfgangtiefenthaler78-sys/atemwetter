@@ -1,0 +1,34 @@
+name: Tägliche Luft- und Pollendaten
+
+on:
+  schedule:
+    - cron: '41 4 * * *'   # 05:41 Wien (Winterzeit), 06:41 im Sommer
+  workflow_dispatch:
+
+concurrency: daily-data
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q cdsapi xarray netCDF4
+      - name: Luftgüte (GeoSphere Austria)
+        run: python3 scripts/fetch_air.py air.json
+      - name: Pollen (Copernicus CAMS)
+        continue-on-error: true
+        env:
+          ADS_API_KEY: ${{ secrets.ADS_API_KEY }}
+        run: |
+          printf "url: https://ads.atmosphere.copernicus.eu/api\nkey: %s\n" "$ADS_API_KEY" > ~/.cdsapirc
+          chmod 600 ~/.cdsapirc
+          python3 scripts/fetch_pollen.py air.json
+      - name: In die Datenbank schreiben
+        run: python3 scripts/push_supabase.py air.json

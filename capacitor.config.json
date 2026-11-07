@@ -1,0 +1,7 @@
+{
+  "appId": "at.mayoka.atemwetter",
+  "appName": "Atemwetter",
+  "webDir": "www",
+  "android": { "adjustMarginsForEdgeToEdge": "auto" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}
