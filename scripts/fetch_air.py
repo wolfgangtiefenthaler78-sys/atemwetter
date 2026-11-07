@@ -2,8 +2,8 @@
 """Atemwetter: holt Luftgüte- und Wetterprognosen für eine feste Ortsliste
 von GeoSphere Austria (Data Hub, Lizenz CC BY 4.0, kommerzielle Nutzung erlaubt)
 und schreibt air.json.
-  Luftgüte: chem-v2-1h-3km (PM2.5, PM10, NO2, O3)
-  Wetter:   nwp-v2-1h-1km (Wind 10 m, rel. Feuchte, Temperatur 2 m); nwp-v1-1h-2500m wurde im Nov. 2026 eingestellt
+  Luftgüte: chem-v2-1h-3km (PM2.5, PM10, NO2, O3); Orte außerhalb (z. B. Norddeutschland) aus chem-v2-1h-9km (Europa)
+  Wetter:   nwp-v2-1h-1km (nur bis ca. 51,5° N; weiter nördlich bleibt der Luftaustausch leer) (Wind 10 m, rel. Feuchte, Temperatur 2 m); nwp-v1-1h-2500m wurde im Nov. 2026 eingestellt
 Der Luftqualitätsindex wird nach den 2024 überarbeiteten EEA-Bändern selbst berechnet.
 Pollen: keine frei kommerziell nutzbare Quelle eingebunden (pollen = null).
 Orte: aus der Datenbank (Tabelle places), wenn SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY gesetzt sind,
@@ -60,23 +60,55 @@ def sub_index(k, c):
             return round(i * 20 + 20 * min(1, (c - lo) / (hi - lo)))
         lo = hi
 
+class OutOfBounds(Exception):
+    pass
+
 def get(url):
     last = None
     for attempt in range(4):
         try:
-            out = subprocess.run(["curl", "-sS", "-f", "-m", "90", url], capture_output=True, text=True, check=True).stdout
+            r = subprocess.run(["curl", "-sS", "-m", "90", "-w", "\n%{http_code}", url], capture_output=True, text=True, check=True).stdout
+            body, code = r.rsplit("\n", 1)
             time.sleep(0.4)  # GeoSphere: max. 5 Anfragen/s
-            return json.loads(out)
+            if code == "200":
+                return json.loads(body)
+            if code in ("400", "422") and "outside" in body:
+                raise OutOfBounds(body[:200])
+            last = "HTTP %s %s" % (code, body[:200])
+        except OutOfBounds:
+            raise
         except Exception as e:
-            last = e; time.sleep(5)
+            last = e
+        time.sleep(5)
     raise SystemExit("Abruf fehlgeschlagen: %s" % last)
+
+def features(dataset, params, pts, with_start=True):
+    """Liefert je Ort (feature, timestamps) oder None, wenn der Ort außerhalb des Modellgebiets liegt.
+    Liegt ein Ort eines Pakets außerhalb, werden die Orte einzeln abgefragt."""
+    def one(batch):
+        ll = "&".join("lat_lon=%s,%s" % (p[3], p[4]) for p in batch)
+        url = BASE + "%s?parameters=%s&%s&output_format=geojson" % (dataset, params, ll)
+        try:
+            j = get(url + ("&start=" + start if with_start else ""))
+        except SystemExit:
+            if not with_start: raise
+            j = get(url)   # Lauf beginnt erst nach Mitternacht: ohne Startzeit
+        return [(f, j["timestamps"]) for f in j["features"]]
+    try:
+        return one(pts)
+    except OutOfBounds:
+        out = []
+        for p in pts:
+            try: out += one([p])
+            except OutOfBounds: out.append(None)
+        return out
 
 def local(ts):
     return datetime.datetime.fromisoformat(ts).astimezone(TZ)
 
 def build(place, chem, nwp, ctimes, wtimes):
     pid, name, region, lat, lon, elev = place
-    P = chem["properties"]["parameters"]; W = nwp["properties"]["parameters"]
+    P = chem["properties"]["parameters"]; W = nwp["properties"]["parameters"] if nwp else {}
     W = {"u10m": W.get("10u") or W.get("u10m"), "v10m": W.get("10v") or W.get("v10m"),
          "rh2m": W.get("2r") or W.get("rh2m"), "t2m": W.get("2t") or W.get("t2m")}
     hours = {}
@@ -84,7 +116,7 @@ def build(place, chem, nwp, ctimes, wtimes):
         t = local(ts); hours.setdefault(t.date().isoformat(), {})[t.hour] = {
             "pm25": P["pm25surf"]["data"][i], "pm10": P["pm10surf"]["data"][i], "no2": P["no2surf"]["data"][i], "o3": P["o3surf"]["data"][i]}
     met = {}
-    for i, ts in enumerate(wtimes):
+    for i, ts in enumerate(wtimes if nwp else []):
         t = local(ts); u, v = W["u10m"]["data"][i], W["v10m"]["data"][i]
         met.setdefault(t.date().isoformat(), {})[t.hour] = {"wind": None if u is None or v is None else math.hypot(u, v),
                                                               "rh": W["rh2m"]["data"][i], "t2m": W["t2m"]["data"][i]}
@@ -114,16 +146,21 @@ today = datetime.datetime.now(TZ).date()
 start = datetime.datetime.combine(today, datetime.time(0), TZ).astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M")
 out_places = []
 B = 10
+fine, coarse, no_wx = 0, 0, 0
 for s in range(0, len(PLACES), B):
     batch = PLACES[s:s+B]
-    ll = "&".join("lat_lon=%s,%s" % (p[3], p[4]) for p in batch)
-    chem = get(BASE + "chem-v2-1h-3km?parameters=pm25surf,pm10surf,no2surf,o3surf&%s&start=%s&output_format=geojson" % (ll, start))
-    try:
-        nwp = get(BASE + "nwp-v2-1h-1km?parameters=2t,2r,10u,10v&%s&start=%s&output_format=geojson" % (ll, start))
-    except SystemExit:
-        nwp = get(BASE + "nwp-v2-1h-1km?parameters=2t,2r,10u,10v&%s&output_format=geojson" % ll)
-    for p, c, w in zip(batch, chem["features"], nwp["features"]):
-        out_places.append(build(p, c, w, chem["timestamps"], nwp["timestamps"]))
+    chem = features("chem-v2-1h-3km", "pm25surf,pm10surf,no2surf,o3surf", batch)
+    missing = [p for p, c in zip(batch, chem) if c is None]
+    if missing:   # außerhalb des 3-km-Gebiets: europaweites 9-km-Modell
+        wide = iter(features("chem-v2-1h-9km", "pm25surf,pm10surf,no2surf,o3surf", missing))
+        chem = [c if c is not None else next(wide) for c in chem]
+    nwp = features("nwp-v2-1h-1km", "2t,2r,10u,10v", batch)
+    for p, c, w in zip(batch, chem, nwp):
+        if c is None:
+            print("übersprungen (keine Luftdaten):", p[1]); continue
+        fine += 1 if p not in missing else 0; coarse += 1 if p in missing else 0; no_wx += 1 if w is None else 0
+        out_places.append(build(p, c[0], w and w[0], c[1], w[1] if w else []))
+print("Luftgüte 3 km: %d, 9 km: %d, ohne Wetterdaten: %d" % (fine, coarse, no_wx))
 
 data = {"updated": datetime.datetime.now(TZ).isoformat(timespec="minutes"),
         "source": "GeoSphere Austria (CC BY 4.0)", "default": "dornbirn", "places": out_places}

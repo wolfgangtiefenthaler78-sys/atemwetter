@@ -4,7 +4,7 @@ Antworte auf Deutsch (Österreich). Wolfgang (MAYOKA andersch gsund OG, Dornbirn
 Erkläre Änderungen in Alltagssprache, ohne Fachjargon, und sag am Ende, was er sehen oder testen kann.
 
 ## Was die App ist
-Kostenlose Atem- und Luftqualitäts-App für Österreich und das Rheintal unter neutralem Namen, MAYOKA als Partner.
+Kostenlose Atem- und Luftqualitäts-App für Österreich, Deutschland, die Schweiz und Liechtenstein (Schwerpunkt Rheintal) unter neutralem Namen, MAYOKA als Partner.
 Ziel: Reichweite für MAYOKA über Ärzte, Selbsthilfegruppen, Kneippvereine und Unternehmen.
 Ansichten: Heute (Luftqualitätsindex, Schadstoffe vs. WHO 2021, Luftaustausch, Pollen, Tagesverlauf, Tipp der Woche,
 Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergie. Dashboard „Verwaltung“ für Admins.
@@ -62,4 +62,4 @@ das Logo erscheint nur, wenn der Partnername „MAYOKA“ enthält.
   Nullbefunde erwähnen, Herstellerangaben von unabhängigen Belegen trennen, aktuellen Forschungsstand prüfen.
 - Standort nur nach ausdrücklicher Freischaltung per Häkchen; bleibt auf dem Gerät.
 - Quellenangaben Pflicht: GeoSphere Austria (CC BY 4.0), Copernicus CAMS.
-- GeoSphere-Datensätze: Luft `chem-v2-1h-3km`, Wetter `nwp-v2-1h-1km` (v1 im Nov. 2026 eingestellt). Fehlt der Luftaustausch, zuerst `/metadata` des Datensatzes auf `last_forecast_reftime` prüfen.
+- GeoSphere-Datensätze: Luft `chem-v2-1h-3km` (bis ca. 53,7° N), außerhalb `chem-v2-1h-9km` (Europa); Wetter `nwp-v2-1h-1km` (bis ca. 51,5° N, weiter nördlich kein Luftaustausch; v1 im Nov. 2026 eingestellt). Fehlt der Luftaustausch, zuerst `/metadata` des Datensatzes auf `last_forecast_reftime` prüfen.
