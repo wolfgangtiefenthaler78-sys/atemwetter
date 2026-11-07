@@ -18,3 +18,5 @@ android/app/src/main/assets/capacitor.plugins.json
 android/capacitor-cordova-android-plugins/build/
 *.keystore
 *.jks
+__pycache__/
+*.pyc
