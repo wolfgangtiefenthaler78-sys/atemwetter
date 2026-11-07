@@ -63,7 +63,14 @@ export async function loadAll(){
       if(pl.error) throw pl.error; if(dy.error) throw dy.error; if(ct.error) throw ct.error;
       const today = viennaDate(0);
       const days = dy.data.filter(d => d.date >= today || !dy.data.some(x => x.place_id === d.place_id && x.date >= today));
-      const result = { air: buildAir(pl.data, days), state: stateFromRow(ct.data || {}), fromCache: false };
+      const state = stateFromRow(ct.data || {});
+      if(!days.length){
+        // Noch keine Tageswerte in der Datenbank (z. B. vor dem ersten Lauf): letzter gespeicherter Stand oder Schnappschuss.
+        const c = cache.get(), snap = c ? null : await loadSnapshot();
+        const air = (c && c.air) || (snap && snap.air);
+        if(air) return { air, state, fromCache: true };
+      }
+      const result = { air: buildAir(pl.data, days), state, fromCache: false };
       cache.set({ air: result.air, state: result.state, at: Date.now() });
       return result;
     } catch(e){ console.warn('Datenbank nicht erreichbar, nutze gespeicherten Stand', e); }

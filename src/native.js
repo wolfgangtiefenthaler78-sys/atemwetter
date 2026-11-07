@@ -37,9 +37,10 @@ export function initNative(){
   async function fetchDays(lat, lon){
     const ll = 'lat_lon=' + lat.toFixed(4) + ',' + lon.toFixed(4), st = startUtc();
     const chem = await getJSON(BASE + 'chem-v2-1h-3km?parameters=pm25surf,pm10surf,no2surf,o3surf&' + ll + '&start=' + st + '&output_format=geojson');
-    let nwp; try { nwp = await getJSON(BASE + 'nwp-v1-1h-2500m?parameters=t2m,rh2m,u10m,v10m&' + ll + '&start=' + st + '&output_format=geojson'); }
-    catch(e){ nwp = await getJSON(BASE + 'nwp-v1-1h-2500m?parameters=t2m,rh2m,u10m,v10m&' + ll + '&output_format=geojson'); }
-    const P = chem.features[0].properties.parameters, W = nwp.features[0].properties.parameters;
+    let nwp; try { nwp = await getJSON(BASE + 'nwp-v2-1h-1km?parameters=2t,2r,10u,10v&' + ll + '&start=' + st + '&output_format=geojson'); }
+    catch(e){ nwp = await getJSON(BASE + 'nwp-v2-1h-1km?parameters=2t,2r,10u,10v&' + ll + '&output_format=geojson'); }
+    const P = chem.features[0].properties.parameters, N = nwp.features[0].properties.parameters;
+    const W = {u10m: N['10u'] || N.u10m, v10m: N['10v'] || N.v10m, rh2m: N['2r'] || N.rh2m, t2m: N['2t'] || N.t2m};
     const hours = {}, met = {};
     chem.timestamps.forEach((ts,i)=>{ const t = local(ts); (hours[t.date] = hours[t.date] || {})[t.hour] = {pm25:P.pm25surf.data[i], pm10:P.pm10surf.data[i], no2:P.no2surf.data[i], o3:P.o3surf.data[i]}; });
     nwp.timestamps.forEach((ts,i)=>{ const t = local(ts), u = W.u10m.data[i], v = W.v10m.data[i];

@@ -3,7 +3,7 @@
 von GeoSphere Austria (Data Hub, Lizenz CC BY 4.0, kommerzielle Nutzung erlaubt)
 und schreibt air.json.
   Luftgüte: chem-v2-1h-3km (PM2.5, PM10, NO2, O3)
-  Wetter:   nwp-v1-1h-2500m (Wind 10 m, rel. Feuchte, Temperatur 2 m)
+  Wetter:   nwp-v2-1h-1km (Wind 10 m, rel. Feuchte, Temperatur 2 m); nwp-v1-1h-2500m wurde im Nov. 2026 eingestellt
 Der Luftqualitätsindex wird nach den 2024 überarbeiteten EEA-Bändern selbst berechnet.
 Pollen: keine frei kommerziell nutzbare Quelle eingebunden (pollen = null).
 Orte: aus der Datenbank (Tabelle places), wenn SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY gesetzt sind,
@@ -77,6 +77,8 @@ def local(ts):
 def build(place, chem, nwp, ctimes, wtimes):
     pid, name, region, lat, lon, elev = place
     P = chem["properties"]["parameters"]; W = nwp["properties"]["parameters"]
+    W = {"u10m": W.get("10u") or W.get("u10m"), "v10m": W.get("10v") or W.get("v10m"),
+         "rh2m": W.get("2r") or W.get("rh2m"), "t2m": W.get("2t") or W.get("t2m")}
     hours = {}
     for i, ts in enumerate(ctimes):
         t = local(ts); hours.setdefault(t.date().isoformat(), {})[t.hour] = {
@@ -117,9 +119,9 @@ for s in range(0, len(PLACES), B):
     ll = "&".join("lat_lon=%s,%s" % (p[3], p[4]) for p in batch)
     chem = get(BASE + "chem-v2-1h-3km?parameters=pm25surf,pm10surf,no2surf,o3surf&%s&start=%s&output_format=geojson" % (ll, start))
     try:
-        nwp = get(BASE + "nwp-v1-1h-2500m?parameters=t2m,rh2m,u10m,v10m&%s&start=%s&output_format=geojson" % (ll, start))
+        nwp = get(BASE + "nwp-v2-1h-1km?parameters=2t,2r,10u,10v&%s&start=%s&output_format=geojson" % (ll, start))
     except SystemExit:
-        nwp = get(BASE + "nwp-v1-1h-2500m?parameters=t2m,rh2m,u10m,v10m&%s&output_format=geojson" % ll)
+        nwp = get(BASE + "nwp-v2-1h-1km?parameters=2t,2r,10u,10v&%s&output_format=geojson" % ll)
     for p, c, w in zip(batch, chem["features"], nwp["features"]):
         out_places.append(build(p, c, w, chem["timestamps"], nwp["timestamps"]))
 

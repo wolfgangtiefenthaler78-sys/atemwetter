@@ -34,5 +34,5 @@ Copernicus CAMS ───┼─> GitHub-Action ─> Supabase-Datenbank ─┤
 | Android-Test-APK | Actions → „Android-Test-APK bauen“ → Run workflow → APK unter „Artifacts“ |
 
 ## Datenquellen
-GeoSphere Austria Data Hub (`chem-v2-1h-3km`, `nwp-v1-1h-2500m`, CC BY 4.0) · Copernicus Atmosphere Monitoring Service
+GeoSphere Austria Data Hub (`chem-v2-1h-3km`, `nwp-v2-1h-1km`, CC BY 4.0) · Copernicus Atmosphere Monitoring Service
 (`cams-europe-air-quality-forecasts`, Ensemble, Copernicus-Lizenz). Luftqualitätsindex nach EEA-Bändern (Revision 2024).

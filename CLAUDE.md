@@ -61,3 +61,4 @@ MAYOKA-Farben und -Logo sollen in die Partner-Elemente einfließen, sobald Wolfg
   Nullbefunde erwähnen, Herstellerangaben von unabhängigen Belegen trennen, aktuellen Forschungsstand prüfen.
 - Standort nur nach ausdrücklicher Freischaltung per Häkchen; bleibt auf dem Gerät.
 - Quellenangaben Pflicht: GeoSphere Austria (CC BY 4.0), Copernicus CAMS.
+- GeoSphere-Datensätze: Luft `chem-v2-1h-3km`, Wetter `nwp-v2-1h-1km` (v1 im Nov. 2026 eingestellt). Fehlt der Luftaustausch, zuerst `/metadata` des Datensatzes auf `last_forecast_reftime` prüfen.
