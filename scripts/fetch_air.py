@@ -42,7 +42,7 @@ def places_from_db():
     if not (url and key):
         return None
     req = urllib.request.Request(url.rstrip("/") + "/rest/v1/places?select=id,name,region,lat,lon,elev&active=eq.true&order=sort",
-                                 headers={"apikey": key, "Authorization": "Bearer " + key})
+                                 headers={"apikey": key, **({"Authorization": "Bearer " + key} if key.startswith("eyJ") else {})})
     rows = json.load(urllib.request.urlopen(req, timeout=60))
     return [(r["id"], r["name"], r["region"], r["lat"], r["lon"], r["elev"]) for r in rows]
 

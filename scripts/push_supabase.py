@@ -2,10 +2,15 @@
 """Schreibt die Tagesdaten aus air.json in die Tabelle air_days (Upsert) und räumt alte Tage auf.
 Braucht SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY (nur als GitHub-Secret, nie im Code).
 Aufruf: python3 scripts/push_supabase.py air.json"""
-import json, os, sys, urllib.request
+import json, os, sys, urllib.request, urllib.error
 
 url = os.environ["SUPABASE_URL"].rstrip("/"); key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-H = {"apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json"}
+H = {"apikey": key, "Content-Type": "application/json"}
+if key.startswith("eyJ"):  # alter service_role-Schlüssel (JWT); neue sb_secret_-Schlüssel nur im apikey-Kopf
+    H["Authorization"] = "Bearer " + key
+elif not key.startswith("sb_secret_"):
+    raise SystemExit("SUPABASE_SERVICE_ROLE_KEY ist kein Schreibschlüssel. Benötigt: service_role (beginnt mit eyJ) "
+                     "oder Secret key (beginnt mit sb_secret_). Der öffentliche anon-/publishable-Schlüssel genügt nicht.")
 air = json.load(open(sys.argv[1], encoding="utf-8"))
 
 rows = []
@@ -19,8 +24,11 @@ def call(path, body, prefer=None):
     h = dict(H)
     if prefer: h["Prefer"] = prefer
     req = urllib.request.Request(url + path, data=json.dumps(body).encode("utf-8"), headers=h, method="POST")
-    with urllib.request.urlopen(req, timeout=120) as r:
-        return r.status
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        raise SystemExit("Supabase %s: %s" % (e.code, e.read().decode("utf-8", "replace")[:300]))
 
 for i in range(0, len(rows), 200):
     call("/rest/v1/air_days?on_conflict=place_id,date", rows[i:i+200], "resolution=merge-duplicates,return=minimal")
