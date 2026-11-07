@@ -90,6 +90,10 @@ p{margin:0}
 .partner{background:var(--mk-soft);border:1px solid var(--mk-line);border-radius:var(--r);padding:24px 20px 20px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
 .partner::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:linear-gradient(90deg,var(--mk-orange) 0 50%,var(--mk-blue) 50% 100%)}
 .partner .eyebrow{color:var(--mk-ink)}
+.p-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.p-title{display:flex;flex-direction:column;gap:10px;min-width:0}
+.p-logo{flex:none;width:84px;height:auto;background:#fff;border-radius:10px;padding:6px 8px;box-sizing:content-box}
+@media (min-width:600px){.p-logo{width:100px}}
 .partner h3{font-size:1.2rem}
 .code{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
 .code .num{font-size:1.15rem;font-weight:500;letter-spacing:.08em;background:var(--surface);border:1px dashed var(--accent);padding:6px 12px;border-radius:8px}

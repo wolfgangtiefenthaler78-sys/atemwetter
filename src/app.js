@@ -221,6 +221,7 @@ function renderContent(){
   $('tip-text').textContent = tip.text || '';
   $('p-name').textContent = p.name ? 'Partner · ' + p.name : 'Partner';
   $('p-head').textContent = p.headline || '';
+  $('p-logo').hidden = !/mayoka/i.test(p.name || '');
   $('p-text').textContent = p.text || '';
   $('p-codebox').hidden = !p.code;
   $('p-code').textContent = p.code || '';

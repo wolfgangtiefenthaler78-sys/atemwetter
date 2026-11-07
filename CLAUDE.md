@@ -50,7 +50,8 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergi
 ## Gestaltung
 Ruhige Spalte, ab 960 px zwei Spalten. Farben nur als Tokens in `:root` (Hell- und Dunkelmodus).
 Schriften: Familjen Grotesk (Titel), Atkinson Hyperlegible (Text), IBM Plex Mono (Zahlen).
-MAYOKA-Farben und -Logo sollen in die Partner-Elemente einfließen, sobald Wolfgang sie liefert.
+MAYOKA-Farben (Tokens `--mk-*`: Orange `#fb8a40`, Hellblau `#5cc0de`) und Logo (`src/mayoka-logo.png`) nur in Partner-Elementen;
+das Logo erscheint nur, wenn der Partnername „MAYOKA“ enthält.
 
 ## Inhaltliche Regeln
 - Begriffe: „Longevity“ als Leitbegriff, dazu Wellness, Gesundheit, Auszeit. Longevity als Thema, nie als Versprechen.
