@@ -160,6 +160,13 @@ table.codes td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-alig
 .s-pick-head output small{color:var(--muted);font-size:.88rem}
 .s-pick input[type=range]{width:100%;margin:0;height:32px;accent-color:var(--accent);cursor:pointer;touch-action:pan-y}
 .season{display:flex;flex-direction:column;gap:4px}
+.season .s-group{padding:12px 10px 2px}
+.season .s-group:first-child{padding-top:0}
+.s-filter{display:flex;gap:8px;flex-wrap:wrap}
+.al-groups{display:flex;flex-direction:column;gap:12px}
+.al-group{display:flex;flex-direction:column;gap:6px}
+.mk-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);vertical-align:2px;margin-left:2px}
+.sd-pot{margin:0;font-size:.9rem}
 .season .s-row{border-radius:10px}
 .season .s-row.active{background:var(--accent-soft)}
 .season .s-row.open{outline:1px solid var(--line);background:var(--surface)}

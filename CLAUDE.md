@@ -7,7 +7,7 @@ Erkläre Änderungen in Alltagssprache, ohne Fachjargon, und sag am Ende, was er
 Kostenlose Atem- und Luftqualitäts-App für Österreich, Deutschland, die Schweiz und Liechtenstein (Schwerpunkt Rheintal) unter neutralem Namen, MAYOKA als Partner.
 Ziel: Reichweite für MAYOKA über Ärzte, Selbsthilfegruppen, Kneippvereine und Unternehmen.
 Ansichten: Heute (Luftqualitätsindex, Schadstoffe vs. WHO 2021, Luftaustausch, Pollen, Tagesverlauf, Tipp der Woche,
-Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma, Allergie. Dashboard „Verwaltung“ für Admins.
+Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Pollen- und Sporenarten), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma. Dashboard „Verwaltung“ für Admins.
 
 ## Aufbau
 | Teil | Ort |
@@ -51,6 +51,11 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma,
   selbst (`version.json` + `app.html`) – außer bei Änderungen am nativen Teil (Plugins, Berechtigungen, Symbol):
   dann `minShell` in `data/app-meta.json` erhöhen und eine neue APK/AAB bauen (Play-Store-Update) bzw. eine neue iPhone-Version hochladen.
 - Für größere Änderungen einen Branch und Pull Request anlegen und Wolfgang die Vorschau beschreiben.
+- **Immer alle Anwendungen nachziehen** (Wunsch von Wolfgang): Nach jeder Veröffentlichung auf `main`
+  1. Web: Lauf „Web-App veröffentlichen“ abwarten und online prüfen.
+  2. Android: Workflow `android-release.yml` starten, damit Neu-Downloads die aktuelle Version enthalten (installierte Apps aktualisieren sich selbst).
+  3. iPhone: Workflow `ios.yml` starten (Prüfbau; mit Apple-Secrets zusätzlich TestFlight). Die Home-Bildschirm-Version (`iphone.html`) ist die Website und damit automatisch aktuell.
+  Beim Abschluss kurz melden, was in welcher App angekommen ist.
 
 ## Gestaltung
 Ruhige Spalte, ab 960 px zwei Spalten. Farben nur als Tokens in `:root` (Hell- und Dunkelmodus).

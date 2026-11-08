@@ -112,61 +112,98 @@ const POLLEN_NAMES = {alder:'Erle',birch:'Birke',grass:'Gräser',mugwort:'Beifu�
 const POLLEN_TH = {alder:[10,50], birch:[10,100], grass:[10,50], mugwort:[5,20], ragweed:[3,10]};
 const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name:'mäßig',c:'var(--q3)'},{name:'hoch',c:'var(--q4)'}];
 function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
-let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>POLLEN_NAMES[k]);
+// Typische Blühzeiten in Mitteleuropa (0 = Jänner): Monate mit Flug (ms), Hauptblüte (pk), Allergiepotenzial (pot 1–3).
+// k = Schlüssel der tagesgenauen Copernicus-Prognose (nur Erle, Birke, Gräser, Beifuß, Ambrosia).
+const SEASON_GROUPS = ['Laubbäume','Nadelbäume','Gräser und Kräuter','Schimmelpilzsporen'];
+const SEASON = [
+  {id:'hazel',    g:0, n:'Hasel',       pn:'Haselpollen',      ms:[0,1,2],         pk:[1],   pot:2, note:'In milden Wintern oft schon ab Dezember.'},
+  {id:'alder',    g:0, n:'Erle',        pn:'Erlenpollen',      ms:[0,1,2,3],       pk:[1,2], pot:2, k:'alder'},
+  {id:'elm',      g:0, n:'Ulme',        pn:'Ulmenpollen',      ms:[1,2,3],         pk:[2],   pot:1},
+  {id:'poplar',   g:0, n:'Pappel',      pn:'Pappelpollen',     ms:[2,3],           pk:[2],   pot:1, note:'Die weißen Samenflocken im Frühsommer sind keine Pollen und lösen selbst kaum Allergien aus.'},
+  {id:'willow',   g:0, n:'Weide',       pn:'Weidenpollen',     ms:[2,3,4],         pk:[3],   pot:1},
+  {id:'ash',      g:0, n:'Esche',       pn:'Eschenpollen',     ms:[2,3],           pk:[3],   pot:2, note:'Verwandt mit der Olive; wer auf eine reagiert, reagiert oft auch auf die andere.'},
+  {id:'hornbeam', g:0, n:'Hainbuche',   pn:'Hainbuchenpollen', ms:[2,3,4],         pk:[3],   pot:2, note:'Verwandt mit Birke, Erle und Hasel.'},
+  {id:'birch',    g:0, n:'Birke',       pn:'Birkenpollen',     ms:[2,3,4],         pk:[3],   pot:3, k:'birch', note:'Häufig zusammen mit Beschwerden bei rohem Kern- und Steinobst oder Haselnüssen.'},
+  {id:'plane',    g:0, n:'Platane',     pn:'Platanenpollen',   ms:[3,4],           pk:[3],   pot:2, note:'Häufiger Stadtbaum.'},
+  {id:'beech',    g:0, n:'Buche',       pn:'Buchenpollen',     ms:[3,4],           pk:[4],   pot:1},
+  {id:'oak',      g:0, n:'Eiche',       pn:'Eichenpollen',     ms:[3,4,5],         pk:[4],   pot:2},
+  {id:'olive',    g:0, n:'Olive',       pn:'Olivenpollen',     ms:[4,5],           pk:[4],   pot:3, note:'Vor allem im Mittelmeerraum, also im Urlaub wichtig.'},
+  {id:'lime',     g:0, n:'Linde',       pn:'Lindenpollen',     ms:[5,6],           pk:[5],   pot:1},
+  {id:'chestnut', g:0, n:'Edelkastanie',pn:'Kastanienpollen',  ms:[5,6],           pk:[5],   pot:1, note:'Häufig im Tessin und in Südtirol.'},
+  {id:'cypress',  g:1, n:'Zypresse',    pn:'Zypressenpollen',  ms:[0,1,2,3],       pk:[1,2], pot:2, note:'Vor allem im Mittelmeerraum und als Zierbaum; im Süden ein häufiger Auslöser im Spätwinter.'},
+  {id:'juniper',  g:1, n:'Wacholder und Thuja', pn:'Pollen von Wacholder und Thuja', ms:[2,3,4], pk:[3], pot:2, note:'Thuja (Lebensbaum) ist eine häufige Heckenpflanze. Wacholder, Thuja und Zypresse gehören zur selben Familie.'},
+  {id:'larch',    g:1, n:'Lärche',      pn:'Lärchenpollen',    ms:[2,3,4],         pk:[3],   pot:1},
+  {id:'pine',     g:1, n:'Kiefer',      pn:'Kiefernpollen',    ms:[4,5],           pk:[4],   pot:1, note:'Der gelbe Blütenstaub auf Autos und Pfützen („Schwefelregen“) ist auffällig, löst aber selten Allergien aus.'},
+  {id:'spruce',   g:1, n:'Fichte',      pn:'Fichtenpollen',    ms:[4,5],           pk:[4],   pot:1, note:'Viel sichtbarer Blütenstaub, aber selten Auslöser von Allergien.'},
+  {id:'fir',      g:1, n:'Tanne',       pn:'Tannenpollen',     ms:[4,5],           pk:[4],   pot:1, note:'Selten Auslöser von Allergien.'},
+  {id:'grass',    g:2, n:'Gräser',      pn:'Gräserpollen',     ms:[4,5,6,7],       pk:[4,5], pot:3, k:'grass'},
+  {id:'rye',      g:2, n:'Roggen',      pn:'Roggenpollen',     ms:[4,5],           pk:[4],   pot:3, note:'Getreide aus der Familie der Gräser; wer auf Gräser reagiert, reagiert meist auch auf Roggen.'},
+  {id:'plantain', g:2, n:'Wegerich',    pn:'Wegerichpollen',   ms:[4,5,6,7,8],     pk:[5],   pot:2},
+  {id:'sorrel',   g:2, n:'Ampfer',      pn:'Ampferpollen',     ms:[4,5,6],         pk:[5],   pot:1},
+  {id:'nettle',   g:2, n:'Brennnessel', pn:'Brennnesselpollen',ms:[5,6,7,8],       pk:[6,7], pot:1, note:'Das verwandte Glaskraut im Mittelmeerraum ist dagegen ein starker Auslöser.'},
+  {id:'mugwort',  g:2, n:'Beifuß',      pn:'Beifußpollen',     ms:[6,7,8],         pk:[7],   pot:3, k:'mugwort'},
+  {id:'goosefoot',g:2, n:'Gänsefuß',    pn:'Gänsefußpollen',   ms:[6,7,8],         pk:[7],   pot:1},
+  {id:'ragweed',  g:2, n:'Ambrosia',    pn:'Ambrosiapollen',   ms:[7,8,9],         pk:[7,8], pot:3, k:'ragweed', note:'Schon wenige Ambrosiapollen können Beschwerden auslösen.'},
+  {id:'alternaria',g:3,n:'Alternaria',  pn:'Alternaria-Sporen',ms:[4,5,6,7,8,9],   pk:[6,7], pot:3, note:'Schimmelpilzsporen, keine Pollen. Viele Sporen an warmen, trockenen und windigen Tagen und bei der Getreideernte.'},
+  {id:'cladosporium',g:3,n:'Cladosporium',pn:'Cladosporium-Sporen',ms:[4,5,6,7,8,9],pk:[6,7], pot:2, note:'Schimmelpilzsporen, keine Pollen. Im Sommer die häufigsten Sporen in der Luft.'}];
+const SEASON_BY = Object.fromEntries(SEASON.map(P=>[P.id,P]));
+const POT = ['','gering','mittel','hoch'];
+let seasonAll = false;
+let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>SEASON_BY[k]);  // Pollen- und Sporenarten aus dem Katalog
+const myModel = () => myAllergens.filter(k=>POLLEN_NAMES[k]);                     // davon mit Copernicus-Tageswerten
 let seasonSel = null;  // vom Nutzer gewählter Monat (Schieberegler); null = aktueller Monat
 let seasonOpen = null; // aufgeklappte Pollenart
-// Typische Blühzeiten in Mitteleuropa: Monate mit Pollenflug und Monate der Hauptblüte (0 = Jänner)
-const SEASON = [
-  {n:'Hasel', pn:'Haselpollen',    ms:[0,1,2],     pk:[1]},
-  {n:'Erle', pn:'Erlenpollen',     ms:[0,1,2,3],   pk:[1,2],   k:'alder'},
-  {n:'Esche', pn:'Eschenpollen',    ms:[2,3],       pk:[3]},
-  {n:'Birke', pn:'Birkenpollen',    ms:[2,3,4],     pk:[3],     k:'birch'},
-  {n:'Gräser', pn:'Gräserpollen',   ms:[4,5,6,7],   pk:[4,5],   k:'grass'},
-  {n:'Beifuß', pn:'Beifußpollen',   ms:[6,7,8],     pk:[7],     k:'mugwort'},
-  {n:'Ambrosia', pn:'Ambrosiapollen', ms:[7,8,9],     pk:[7,8],   k:'ragweed', note:'Schon wenige Ambrosiapollen können Beschwerden auslösen.'}];
 const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const phase = (P,m) => P.pk.includes(m) ? 2 : P.ms.includes(m) ? 1 : 0;
 function seasonDetail(P, selM, isNow){
-  const id = 'sd-'+P.n.replace(/\W/g,'');
+  const id = 'sd-'+P.id;
   const ph = phase(P, selM), pkTxt = P.pk.map(m=>MN[m]).join(' und ');
   const strip = MS.map((x,i)=>'<span class="ph ph'+phase(P,i)+(i===selM?' sel':'')+'"></span>').join('');
   const axis = MS.map((x,i)=>'<span'+(i===selM?' class="sel"':'')+'>'+x[0]+'</span>').join('');
   const mon = isNow ? 'jetzt im '+MN[selM] : 'im '+MN[selM];
   let box;
-  if(ph===2) box = '<div class="sd-box w2"><b>Warnung: Hauptblüte '+mon+'</b><span>'+(isNow?'Jetzt ist':'In dieser Zeit ist')+' mit der stärksten Belastung durch '+P.pn+' zu rechnen. Zeit im Freien bewusst planen, tagsüber eher kurz und kräftig lüften und die verordneten Medikamente bereithalten.</span></div>';
+  if(ph===2) box = '<div class="sd-box w2"><b>Warnung: '+(P.g===3?'Hauptsaison ':'Hauptblüte ')+mon+'</b><span>'+(isNow?'Jetzt ist':'In dieser Zeit ist')+' mit der stärksten Belastung durch '+P.pn+' zu rechnen. Zeit im Freien bewusst planen, tagsüber eher kurz und kräftig lüften und die verordneten Medikamente bereithalten.</span></div>';
   else if(ph===1){ const before = selM < P.pk[0]; box = '<div class="sd-box w1"><b>Aktiv: '+P.n+' fliegt '+mon+'</b><span>'+(before ? 'Die Saison beginnt, die Hauptblüte folgt meist im '+pkTxt+'.' : 'Die Hauptblüte ist vorbei, der Pollenflug klingt langsam ab.')+'</span></div>'; }
   else { const nx = (P.ms[0]-selM+12)%12; box = '<div class="sd-box w0"><b>Ruht '+mon+'</b><span>Nächster Beginn meist im '+MN[P.ms[0]]+(nx?' (in '+nx+' Monat'+(nx>1?'en':'')+')':'')+', Hauptblüte im '+pkTxt+'.</span></div>'; }
   let today = '';
   if(isNow){
     if(P.k){ const d = curDays()[todayIndex()] || {}, v = (d.pollen||{})[P.k]||0, L = pollenLevel(P.k, v);
       today = '<p class="sd-today"><span class="dot" style="background:'+L.c+'"></span>Heute in '+curPlace().name+' laut Modell: <b>'+L.name+'</b>'+(v>=1?' <span class="num muted">('+fmt(v)+' Körner/m³)</span>':'')+'</p>'; }
-    else today = '<p class="sd-today muted">Für '+P.n+' gibt es keine tagesgenaue Prognose von Copernicus, nur den Blühkalender.</p>';
+    else today = '<p class="sd-today muted">Für '+P.n+' gibt es keine tagesgenaue Prognose von Copernicus, nur den Kalender.</p>';
   }
   return '<div class="sd" id="'+id+'">'+
     '<div class="sd-strip" aria-hidden="true">'+strip+'</div><div class="sd-axis" aria-hidden="true">'+axis+'</div>'+
     '<div class="sd-legend" aria-hidden="true"><span><i class="ph ph0"></i>ruht</span><span><i class="ph ph1"></i>fliegt</span><span><i class="ph ph2"></i>Hauptblüte</span></div>'+
-    box + today + (P.note?'<p class="muted sd-note">'+P.note+'</p>':'') + '</div>';
+    '<p class="sd-pot">Allergiepotenzial: <b>'+POT[P.pot]+'</b>'+(P.g===3?' · Pilzsporen':'')+'</p>' + box + today + (P.note?'<p class="muted sd-note">'+P.note+'</p>':'') + '</div>';
 }
 function renderSeason(nowMonth){
   // Saisonkalender als einfache Liste mit Monats-Schieberegler; Antippen einer Pollenart klappt die Jahresübersicht auf
   const nowM = nowMonth, selM = seasonSel==null ? nowM : seasonSel, isNow = selM===nowM;
-  const flying = SEASON.filter(P=>P.ms.includes(selM)).map(P=>P.n);
+  const pool = myAllergens.length && !seasonAll ? SEASON.filter(P=>myAllergens.includes(P.id)) : SEASON;
+  const selOnly = myAllergens.length && !seasonAll;
+  const flying = pool.filter(P=>P.ms.includes(selM) && (selOnly || P.pot>=2)).map(P=>P.n);
   $('al-month').value = selM;
   $('al-month').setAttribute('aria-valuetext', MN[selM] + (isNow?' (jetzt)':''));
-  $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? 'Es fliegen: '+flying.join(', ') : 'Kaum Pollenflug')+'</small>';
+  $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? (selOnly?'Es fliegen: ':'Wichtig: ')+flying.join(', ') : (selOnly?'Keine deiner Arten in Saison':'Kaum relevanter Pollenflug'))+'</small>';
   $('al-month-now').hidden = isNow;
-  $('al-season').innerHTML = SEASON.map(P=>{
-    const a = P.ms[0], e = P.ms[P.ms.length-1], ph = phase(P, selM), open = seasonOpen===P.n;
+  const mine = myAllergens.length && !seasonAll;
+  $('al-sfilter').hidden = !myAllergens.length;
+  $('al-sfilter').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', String((c.dataset.f==='all')===!mine)));
+  const list = SEASON.filter(P=>!mine || myAllergens.includes(P.id));
+  const row = P=>{
+    const a = P.ms[0], e = P.ms[P.ms.length-1], ph = phase(P, selM), open = seasonOpen===P.id;
     const nextIn = (a - selM + 12) % 12;
-    const st = ph===2 ? ['Hauptblüte','peak'] : ph===1 ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
+    const st = ph===2 ? [P.g===3?'Hauptsaison':'Hauptblüte','peak'] : ph===1 ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
     const bar = MS.map((x,i)=>'<span class="cell'+(P.ms.includes(i)?' on':'')+(i===selM?' now':'')+'"></span>').join('');
-    const id = 'sd-'+P.n.replace(/\W/g,'');
-    return '<div class="s-row'+(ph?' active':'')+(open?' open':'')+'"><button type="button" class="s-btn" data-n="'+P.n+'" aria-expanded="'+open+'"'+(open?' aria-controls="'+id+'"':'')+'>'+
-      '<span class="s-head"><b>'+P.n+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-right"><span class="s-st '+st[1]+'">'+st[0]+'</span><span class="s-chev" aria-hidden="true"></span></span></span>'+
+    return '<div class="s-row'+(ph?' active':'')+(open?' open':'')+'"><button type="button" class="s-btn" data-n="'+P.id+'" aria-expanded="'+open+'"'+(open?' aria-controls="sd-'+P.id+'"':'')+'>'+
+      '<span class="s-head"><b>'+P.n+(P.k?' <span class="mk-dot" title="Tagesprognose verfügbar"></span>':'')+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-right"><span class="s-st '+st[1]+'">'+st[0]+'</span><span class="s-chev" aria-hidden="true"></span></span></span>'+
       '<span class="s-bar" aria-hidden="true">'+bar+'</span></button>'+(open ? seasonDetail(P, selM, isNow) : '')+'</div>';
-  }).join('') + '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===selM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
+  };
+  $('al-season').innerHTML = SEASON_GROUPS.map((g,gi)=>{ const L = list.filter(P=>P.g===gi); return L.length ? '<div class="s-group eyebrow">'+g+'</div>'+L.map(row).join('') : ''; }).join('') +
+    '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===selM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
 }
+$('al-sfilter').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return; seasonAll = c.dataset.f==='all'; renderSeason(new Date().getMonth()); });
 $('al-season').addEventListener('click', e=>{ const b = e.target.closest('.s-btn'); if(!b) return;
   seasonOpen = seasonOpen===b.dataset.n ? null : b.dataset.n; renderSeason(new Date().getMonth());
   const nb = document.querySelector('#al-season .s-btn[data-n="'+b.dataset.n+'"]'); if(nb) nb.focus(); });
@@ -175,19 +212,25 @@ $('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason
 function renderAllergy(){
   const days = curDays(); if(!days.length) return;
   const ti = todayIndex(), t = days[ti];
-  const keys = myAllergens.length ? myAllergens : Object.keys(POLLEN_NAMES);
-  $('al-chips').innerHTML = Object.keys(POLLEN_NAMES).map(k=>'<button class="chip" type="button" data-k="'+k+'" aria-pressed="'+myAllergens.includes(k)+'">'+POLLEN_NAMES[k]+'</button>').join('');
+  const sel = myModel();
+  const keys = myAllergens.length ? sel : Object.keys(POLLEN_NAMES);   // Arten mit Tageswerten
+  $('al-chips').innerHTML = SEASON_GROUPS.map((g,gi)=>'<div class="al-group"><div class="eyebrow">'+g+'</div><div class="chips">'+
+    SEASON.filter(P=>P.g===gi).map(P=>'<button class="chip" type="button" data-k="'+P.id+'" aria-pressed="'+myAllergens.includes(P.id)+'">'+P.n+(P.k?' <span class="mk-dot" aria-label="mit Tagesprognose"></span>':'')+'</button>').join('')+'</div></div>').join('');
   const nowM = new Date().getMonth();
-  const SEAS = {alder:[0,1,2,3], birch:[2,3,4], grass:[4,5,6,7], mugwort:[6,7,8], ragweed:[7,8,9]};
-  if(t.pollen == null){
-    const inSeason = keys.filter(k=>SEAS[k].includes(nowM));
+  const calSel = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]) : SEASON.filter(P=>P.pot>=2)).filter(P=>!P.k);
+  const calNow = calSel.filter(P=>P.ms.includes(nowM)), calPeak = calNow.filter(P=>P.pk.includes(nowM));
+  const calTxt = calNow.length ? ' Laut Kalender '+(myAllergens.length?'außerdem ':'')+'in Saison: '+calNow.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ')+'.' : '';
+  const pillTxt = myAllergens.length ? 'Deine Auswahl: ' + myAllergens.length + (myAllergens.length===1?' Art':' Arten') : 'Alle Pollenarten';
+  if(t.pollen == null || !keys.length){
+    const inSeason = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]) : SEASON.filter(P=>P.pot>=2)).filter(P=>P.ms.includes(nowM));
+    const peak = inSeason.filter(P=>P.pk.includes(nowM));
     $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
-    $('al-verdict').textContent = inSeason.length ? 'Blütezeit läuft' : 'Außerhalb der Blütezeit';
-    $('al-dot').style.background = inSeason.length ? 'var(--q3)' : 'var(--q1)';
-    $('al-pill').textContent = myAllergens.length ? 'Deine Auswahl: ' + myAllergens.map(k=>POLLEN_NAMES[k]).join(', ') : 'Alle Pollenarten';
+    $('al-verdict').textContent = peak.length ? 'Hauptblüte' : inSeason.length ? 'Blütezeit läuft' : 'Außerhalb der Blütezeit';
+    $('al-dot').style.background = peak.length ? 'var(--q4)' : inSeason.length ? 'var(--q3)' : 'var(--q1)';
+    $('al-pill').textContent = pillTxt;
     $('al-lede').textContent = inSeason.length
-      ? 'Laut Blühkalender ist jetzt typischerweise Saison für ' + inSeason.map(k=>POLLEN_NAMES[k]).join(', ') + '. Tagesgenaue Messwerte bietet der Österreichische Pollenwarndienst.'
-      : 'Für ' + (myAllergens.length ? 'deine Pollenarten' : 'die erfassten Pollenarten') + ' ist laut Blühkalender gerade keine Saison. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.';
+      ? 'Laut Kalender ist jetzt typischerweise Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tagesgenaue Messwerte bietet der Österreichische Pollenwarndienst.' : '')
+      : 'Für ' + (myAllergens.length ? 'deine Auswahl' : 'die wichtigsten Pollenarten') + ' ist laut Kalender gerade keine Saison. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.';
     $('al-days-sec').hidden = true;
     $('al-times-text').textContent = 'Allgemein gilt: In der Pollenzeit lieber kurz und kräftig lüften, nach einem Regenguss ist die Luft oft für einige Zeit pollenärmer. Für Feinstaub und Luftaustausch siehe die Ansicht „Heute“.';
     renderSeason(nowM);
@@ -206,8 +249,8 @@ function renderAllergy(){
   const offSeason = worst.i===0 && (m>=9 || m<=0);
   $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
   $('al-verdict').textContent = V[worst.i]; $('al-dot').style.background = worst.c;
-  $('al-pill').textContent = myAllergens.length ? 'Deine Auswahl: ' + myAllergens.map(k=>POLLEN_NAMES[k]).join(', ') : 'Alle Pollenarten im Modell';
-  $('al-lede').textContent = LED[worst.i] + (offSeason ? 'Die Pollensaison ruht gerade. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.' : '');
+  $('al-pill').textContent = pillTxt;
+  $('al-lede').textContent = (LED[worst.i].trim() + calTxt + (offSeason && !calNow.length ? ' Die Pollensaison ruht gerade. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.' : '')).trim();
   // 3-Tage-Tabelle
   $('al-table').innerHTML = '<thead><tr><th>Pollenart</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead><tbody>'+
     keys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('')+'</tbody>';
@@ -284,12 +327,14 @@ function renderAsthma(){
   else if(t.pm25 > 15) add(1,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Über dem WHO-Richtwert. Hauptverkehrsstraßen meiden, zu ruhigen Zeiten lüften.');
   else add(0,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Unter dem WHO-Richtwert.');
   if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Typisch an Verkehrsachsen. Wege abseits der Hauptstraßen wählen.');
-  const keys = myAllergens.length ? myAllergens : Object.keys(POLLEN_NAMES);
+  const keys = myAllergens.length ? myModel() : Object.keys(POLLEN_NAMES);
   let pw = {i:0, k:null, v:0};
   keys.forEach(k=>{ const v=(t.pollen||{})[k]||0, L=pollenLevel(k,v); if(L.i>pw.i) pw={i:L.i, k, v}; });
   if(pw.i>=3) add(2,'Pollen: '+POLLEN_NAMES[pw.k],'hoch','Bei allergischem Asthma ein starker Auslöser. Zeit draußen kurz halten, nach dem Heimkommen Gesicht und Haare waschen.');
   else if(pw.i===2) add(1,'Pollen: '+POLLEN_NAMES[pw.k],'mäßig','Bei allergischem Asthma spürbar. Lüften zu pollenarmen Zeiten, siehe Allergie-Check.');
   else add(0,'Pollen', pw.i ? 'gering' : 'keine','Im Modell heute kein relevanter Pollenflug'+(myAllergens.length?' deiner Arten':'')+'.');
+  { const m = new Date().getMonth(), cal = myAllergens.map(k=>SEASON_BY[k]).filter(P=>!P.k && P.pot>=2 && P.pk.includes(m));
+    if(cal.length) add(1,'Laut Kalender: '+cal.map(P=>P.n).join(', '),'Hauptblüte','Für diese Arten gibt es keine Tagesprognose. Bei allergischem Asthma jetzt besonders auf Beschwerden achten.'); }
   if(typeof inv.t2m === 'number'){
     if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Kalte, trockene Luft kann die Atemwege verengen. Schal vor Mund und Nase, ruhig aufwärmen, Tempo drosseln.');
     else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Vor Bewegung draußen gut aufwärmen und durch die Nase atmen.');
