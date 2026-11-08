@@ -113,27 +113,63 @@ const POLLEN_TH = {alder:[10,50], birch:[10,100], grass:[10,50], mugwort:[5,20],
 const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name:'mäßig',c:'var(--q3)'},{name:'hoch',c:'var(--q4)'}];
 function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
 let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>POLLEN_NAMES[k]);
-let seasonSel = null; // vom Nutzer gewählter Monat (Schieberegler); null = aktueller Monat
+let seasonSel = null;  // vom Nutzer gewählter Monat (Schieberegler); null = aktueller Monat
+let seasonOpen = null; // aufgeklappte Pollenart
+// Typische Blühzeiten in Mitteleuropa: Monate mit Pollenflug und Monate der Hauptblüte (0 = Jänner)
+const SEASON = [
+  {n:'Hasel', pn:'Haselpollen',    ms:[0,1,2],     pk:[1]},
+  {n:'Erle', pn:'Erlenpollen',     ms:[0,1,2,3],   pk:[1,2],   k:'alder'},
+  {n:'Esche', pn:'Eschenpollen',    ms:[2,3],       pk:[3]},
+  {n:'Birke', pn:'Birkenpollen',    ms:[2,3,4],     pk:[3],     k:'birch'},
+  {n:'Gräser', pn:'Gräserpollen',   ms:[4,5,6,7],   pk:[4,5],   k:'grass'},
+  {n:'Beifuß', pn:'Beifußpollen',   ms:[6,7,8],     pk:[7],     k:'mugwort'},
+  {n:'Ambrosia', pn:'Ambrosiapollen', ms:[7,8,9],     pk:[7,8],   k:'ragweed', note:'Schon wenige Ambrosiapollen können Beschwerden auslösen.'}];
+const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const phase = (P,m) => P.pk.includes(m) ? 2 : P.ms.includes(m) ? 1 : 0;
+function seasonDetail(P, selM, isNow){
+  const id = 'sd-'+P.n.replace(/\W/g,'');
+  const ph = phase(P, selM), pkTxt = P.pk.map(m=>MN[m]).join(' und ');
+  const strip = MS.map((x,i)=>'<span class="ph ph'+phase(P,i)+(i===selM?' sel':'')+'"></span>').join('');
+  const axis = MS.map((x,i)=>'<span'+(i===selM?' class="sel"':'')+'>'+x[0]+'</span>').join('');
+  const mon = isNow ? 'jetzt im '+MN[selM] : 'im '+MN[selM];
+  let box;
+  if(ph===2) box = '<div class="sd-box w2"><b>Warnung: Hauptblüte '+mon+'</b><span>'+(isNow?'Jetzt ist':'In dieser Zeit ist')+' mit der stärksten Belastung durch '+P.pn+' zu rechnen. Zeit im Freien bewusst planen, tagsüber eher kurz und kräftig lüften und die verordneten Medikamente bereithalten.</span></div>';
+  else if(ph===1){ const before = selM < P.pk[0]; box = '<div class="sd-box w1"><b>Aktiv: '+P.n+' fliegt '+mon+'</b><span>'+(before ? 'Die Saison beginnt, die Hauptblüte folgt meist im '+pkTxt+'.' : 'Die Hauptblüte ist vorbei, der Pollenflug klingt langsam ab.')+'</span></div>'; }
+  else { const nx = (P.ms[0]-selM+12)%12; box = '<div class="sd-box w0"><b>Ruht '+mon+'</b><span>Nächster Beginn meist im '+MN[P.ms[0]]+(nx?' (in '+nx+' Monat'+(nx>1?'en':'')+')':'')+', Hauptblüte im '+pkTxt+'.</span></div>'; }
+  let today = '';
+  if(isNow){
+    if(P.k){ const d = curDays()[todayIndex()] || {}, v = (d.pollen||{})[P.k]||0, L = pollenLevel(P.k, v);
+      today = '<p class="sd-today"><span class="dot" style="background:'+L.c+'"></span>Heute in '+curPlace().name+' laut Modell: <b>'+L.name+'</b>'+(v>=1?' <span class="num muted">('+fmt(v)+' Körner/m³)</span>':'')+'</p>'; }
+    else today = '<p class="sd-today muted">Für '+P.n+' gibt es keine tagesgenaue Prognose von Copernicus, nur den Blühkalender.</p>';
+  }
+  return '<div class="sd" id="'+id+'">'+
+    '<div class="sd-strip" aria-hidden="true">'+strip+'</div><div class="sd-axis" aria-hidden="true">'+axis+'</div>'+
+    '<div class="sd-legend" aria-hidden="true"><span><i class="ph ph0"></i>ruht</span><span><i class="ph ph1"></i>fliegt</span><span><i class="ph ph2"></i>Hauptblüte</span></div>'+
+    box + today + (P.note?'<p class="muted sd-note">'+P.note+'</p>':'') + '</div>';
+}
 function renderSeason(nowMonth){
-  // Saisonkalender als einfache Liste mit Monats-Schieberegler
-  const SEASON = [['Hasel',[0,1,2]],['Erle',[0,1,2,3]],['Esche',[2,3]],['Birke',[2,3,4]],['Gräser',[4,5,6,7]],['Beifuß',[6,7,8]],['Ambrosia',[7,8,9]]];
-  const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-  const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  // Saisonkalender als einfache Liste mit Monats-Schieberegler; Antippen einer Pollenart klappt die Jahresübersicht auf
   const nowM = nowMonth, selM = seasonSel==null ? nowM : seasonSel, isNow = selM===nowM;
-  const flying = SEASON.filter(([,ms])=>ms.includes(selM)).map(([n])=>n);
+  const flying = SEASON.filter(P=>P.ms.includes(selM)).map(P=>P.n);
   $('al-month').value = selM;
   $('al-month').setAttribute('aria-valuetext', MN[selM] + (isNow?' (jetzt)':''));
   $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? 'Es fliegen: '+flying.join(', ') : 'Kaum Pollenflug')+'</small>';
   $('al-month-now').hidden = isNow;
-  $('al-season').innerHTML = SEASON.map(([n,ms])=>{
-    const a = ms[0], e = ms[ms.length-1], on = ms.includes(selM);
+  $('al-season').innerHTML = SEASON.map(P=>{
+    const a = P.ms[0], e = P.ms[P.ms.length-1], ph = phase(P, selM), open = seasonOpen===P.n;
     const nextIn = (a - selM + 12) % 12;
-    const st = on ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
-    const bar = MS.map((x,i)=>'<span class="cell'+(ms.includes(i)?' on':'')+(i===selM?' now':'')+'"></span>').join('');
-    return '<div class="s-row'+(on?' active':'')+'"><div class="s-head"><b>'+n+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-st '+st[1]+'">'+st[0]+'</span></div>'+
-      '<div class="s-bar" aria-hidden="true">'+bar+'</div></div>';
+    const st = ph===2 ? ['Hauptblüte','peak'] : ph===1 ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
+    const bar = MS.map((x,i)=>'<span class="cell'+(P.ms.includes(i)?' on':'')+(i===selM?' now':'')+'"></span>').join('');
+    const id = 'sd-'+P.n.replace(/\W/g,'');
+    return '<div class="s-row'+(ph?' active':'')+(open?' open':'')+'"><button type="button" class="s-btn" data-n="'+P.n+'" aria-expanded="'+open+'"'+(open?' aria-controls="'+id+'"':'')+'>'+
+      '<span class="s-head"><b>'+P.n+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-right"><span class="s-st '+st[1]+'">'+st[0]+'</span><span class="s-chev" aria-hidden="true"></span></span></span>'+
+      '<span class="s-bar" aria-hidden="true">'+bar+'</span></button>'+(open ? seasonDetail(P, selM, isNow) : '')+'</div>';
   }).join('') + '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===selM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
 }
+$('al-season').addEventListener('click', e=>{ const b = e.target.closest('.s-btn'); if(!b) return;
+  seasonOpen = seasonOpen===b.dataset.n ? null : b.dataset.n; renderSeason(new Date().getMonth());
+  const nb = document.querySelector('#al-season .s-btn[data-n="'+b.dataset.n+'"]'); if(nb) nb.focus(); });
 $('al-month').addEventListener('input', e=>{ seasonSel = Number(e.target.value); renderSeason(new Date().getMonth()); });
 $('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason(new Date().getMonth()); $('al-month').focus(); });
 function renderAllergy(){
