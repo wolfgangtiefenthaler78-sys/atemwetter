@@ -153,6 +153,12 @@ table.codes td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-alig
 .al-table td,.al-table th{white-space:nowrap}
 .al-table .lv{display:inline-flex;align-items:center;gap:6px}
 .al-tips{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.s-pick{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.s-pick-head{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.s-pick-head label{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.s-pick-head output{flex:1 1 12em;line-height:1.35}
+.s-pick-head output small{color:var(--muted);font-size:.88rem}
+.s-pick input[type=range]{width:100%;margin:0;height:32px;accent-color:var(--accent);cursor:pointer;touch-action:pan-y}
 .season{display:flex;flex-direction:column;gap:4px}
 .season .s-row{padding:8px 10px;border-radius:10px}
 .season .s-row.active{background:var(--accent-soft)}
