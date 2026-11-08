@@ -113,21 +113,29 @@ const POLLEN_TH = {alder:[10,50], birch:[10,100], grass:[10,50], mugwort:[5,20],
 const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name:'mäßig',c:'var(--q3)'},{name:'hoch',c:'var(--q4)'}];
 function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
 let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>POLLEN_NAMES[k]);
+let seasonSel = null; // vom Nutzer gewählter Monat (Schieberegler); null = aktueller Monat
 function renderSeason(nowMonth){
-  // Saisonkalender als einfache Liste: Zeitraum, Status und ein Jahresbalken, der sich der Breite anpasst
+  // Saisonkalender als einfache Liste mit Monats-Schieberegler
   const SEASON = [['Hasel',[0,1,2]],['Erle',[0,1,2,3]],['Esche',[2,3]],['Birke',[2,3,4]],['Gräser',[4,5,6,7]],['Beifuß',[6,7,8]],['Ambrosia',[7,8,9]]];
   const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
   const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-  const nowM = nowMonth;
+  const nowM = nowMonth, selM = seasonSel==null ? nowM : seasonSel, isNow = selM===nowM;
+  const flying = SEASON.filter(([,ms])=>ms.includes(selM)).map(([n])=>n);
+  $('al-month').value = selM;
+  $('al-month').setAttribute('aria-valuetext', MN[selM] + (isNow?' (jetzt)':''));
+  $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? 'Es fliegen: '+flying.join(', ') : 'Kaum Pollenflug')+'</small>';
+  $('al-month-now').hidden = isNow;
   $('al-season').innerHTML = SEASON.map(([n,ms])=>{
-    const a = ms[0], e = ms[ms.length-1], on = ms.includes(nowM);
-    const nextIn = (a - nowM + 12) % 12;
-    const st = on ? ['fliegt jetzt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
-    const bar = MS.map((x,i)=>'<span class="cell'+(ms.includes(i)?' on':'')+(i===nowM?' now':'')+'"></span>').join('');
+    const a = ms[0], e = ms[ms.length-1], on = ms.includes(selM);
+    const nextIn = (a - selM + 12) % 12;
+    const st = on ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
+    const bar = MS.map((x,i)=>'<span class="cell'+(ms.includes(i)?' on':'')+(i===selM?' now':'')+'"></span>').join('');
     return '<div class="s-row'+(on?' active':'')+'"><div class="s-head"><b>'+n+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-st '+st[1]+'">'+st[0]+'</span></div>'+
       '<div class="s-bar" aria-hidden="true">'+bar+'</div></div>';
-  }).join('') + '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===nowM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
+  }).join('') + '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===selM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
 }
+$('al-month').addEventListener('input', e=>{ seasonSel = Number(e.target.value); renderSeason(new Date().getMonth()); });
+$('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason(new Date().getMonth()); $('al-month').focus(); });
 function renderAllergy(){
   const days = curDays(); if(!days.length) return;
   const ti = todayIndex(), t = days[ti];

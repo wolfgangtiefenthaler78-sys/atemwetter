@@ -230,6 +230,10 @@
 
     <section class="block" aria-labelledby="h-al-season">
       <h2 id="h-al-season">Wann was fliegt</h2>
+      <div class="s-pick">
+        <div class="s-pick-head"><label for="al-month">Monat</label><output id="al-month-out" for="al-month" aria-live="polite"></output><button class="btn ghost small" id="al-month-now" type="button" hidden>Zurück zu heute</button></div>
+        <input type="range" id="al-month" min="0" max="11" step="1" value="0" aria-describedby="h-al-season">
+      </div>
       <div class="season" id="al-season"></div>
       <p class="muted" style="font-size:.85rem">Typische Blütezeiten in Mitteleuropa. Je nach Witterung und Höhenlage beginnt die Saison früher oder später. Hasel und Esche sind wichtige Frühblüher, in der Copernicus-Prognose aber nicht enthalten.</p>
     </section>
