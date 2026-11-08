@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Atemwetter: erzeugt App-Symbol und Startbild in MAYOKA-Farben (Gelb → Gold → Orange).
-Schreibt public/icon.png sowie die Android-Symbole und Startbilder unter android/app/src/main/res.
+Schreibt public/icon.png, die Android-Symbole und Startbilder unter android/app/src/main/res
+sowie (falls vorhanden) das iPhone-Symbol und Startbild unter ios/App/App/Assets.xcassets.
 Aufruf: python3 scripts/make_icons.py   (braucht Pillow)"""
 import math, os
 from PIL import Image, ImageDraw, ImageFilter
@@ -77,4 +78,11 @@ if __name__ == "__main__":
         p = f"{RES}/{folder}/splash.png"
         if folder.startswith("drawable") and os.path.exists(p):
             w, h = Image.open(p).size; splash(w, h).save(p, optimize=True)
+    IOS = "ios/App/App/Assets.xcassets"
+    if os.path.isdir(IOS):
+        # iPhone: ein Symbol 1024 × 1024 ohne Transparenz (Ecken rundet iOS selbst), Startbild 2732 × 2732
+        square_icon(1024, 0.92).convert("RGB").save(f"{IOS}/AppIcon.appiconset/AppIcon-512@2x.png", optimize=True)
+        sp = splash(2732, 2732)
+        for n in ("splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"):
+            sp.save(f"{IOS}/Splash.imageset/{n}", optimize=True)
     print("ok: Symbole und Startbilder erzeugt")
