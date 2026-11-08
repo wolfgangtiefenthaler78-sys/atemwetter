@@ -23,7 +23,7 @@ function viennaDate(offsetDays = 0){
 }
 
 function stateFromRow(row){
-  return { tip: row.tip || {}, partner: row.partner || {}, appLink: row.app_link || '', storeUrl: row.store_url || '' };
+  return { tip: row.tip || {}, partner: row.partner || {}, appLink: row.app_link || '', storeUrl: row.store_url || '', pushKey: row.push_public_key || '' };
 }
 
 function buildAir(places, days){
@@ -121,6 +121,15 @@ export const api = {
   },
   async deleteCode(id){
     const { error } = await sb.from('partner_codes').delete().eq('id', id);
+    if(error) throw error;
+  },
+  /** Morgen-Mitteilung im Browser an- bzw. abmelden (nur Empfangsadresse, Ort, Uhrzeit; abgesichert über Datenbankfunktionen). */
+  async savePush(endpoint, p256dh, auth, placeId, hour){
+    const { error } = await sb.rpc('save_push_subscription', { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth, p_place: placeId, p_hour: hour });
+    if(error) throw error;
+  },
+  async deletePush(endpoint){
+    const { error } = await sb.rpc('delete_push_subscription', { p_endpoint: endpoint });
     if(error) throw error;
   },
   /** Live-Änderungen der Inhalte (Tipp, Partner-Box) abonnieren. */

@@ -59,6 +59,13 @@ def square_icon(size, scale=1.0, round_mask=False):
     return img
 
 
+def status_icon(size):
+    a = waves(size, 1.15).split()[3]
+    img = Image.new("RGBA", (size, size), (255, 255, 255, 0)); img.putalpha(a)
+    white = Image.new("RGBA", (size, size), (255, 255, 255, 255)); white.putalpha(a)
+    return white
+
+
 def splash(w, h):
     bg = gradient(w, h).convert("RGBA"); s = round(min(w, h) * 0.42)
     bg.alpha_composite(waves(s), ((w - s) // 2, (h - s) // 2))
@@ -79,6 +86,10 @@ if __name__ == "__main__":
         square_icon(round(48 * f), 0.86, round_mask=True).save(f"{base}/ic_launcher_round.png", optimize=True)
         # Adaptives Symbol: 108 dp, sichtbar sicher sind nur die inneren 66 dp → Wellen auf ~60 % verkleinern
         waves(round(108 * f), 0.60).save(f"{base}/ic_launcher_foreground.png", optimize=True)
+    # Kleines Symbol für Mitteilungen (Android verlangt eine einfarbige weiße Silhouette auf transparentem Grund)
+    for d, f in dens.items():
+        os.makedirs(f"{RES}/drawable-{d}", exist_ok=True)
+        status_icon(round(24 * f)).save(f"{RES}/drawable-{d}/ic_stat_atemwetter.png", optimize=True)
     for folder in sorted(os.listdir(RES)):
         p = f"{RES}/{folder}/splash.png"
         if folder.startswith("drawable") and os.path.exists(p):
