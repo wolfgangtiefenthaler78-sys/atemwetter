@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --mode single && node scripts/postbuild.mjs",
+    "build": "node scripts/check_text.mjs && vite build && vite build --mode single && node scripts/postbuild.mjs",
     "preview": "vite preview",
     "android": "npm run build && node scripts/build-android.mjs && npx cap sync android",
-    "check": "node --check src/app.js && node --check src/data.js && node --check src/native.js && node --check src/live.js",
-    "ios": "npm run build && node scripts/build-android.mjs && npx cap sync ios"
+    "check": "node --check src/app.js && node --check src/data.js && node --check src/native.js && node --check src/live.js && node scripts/check_text.mjs",
+    "ios": "npm run build && node scripts/build-android.mjs && npx cap sync ios",
+    "texte": "node scripts/check_text.mjs --all"
   },
   "dependencies": {
     "@capacitor/android": "7.6.10",

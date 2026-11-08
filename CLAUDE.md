@@ -74,10 +74,17 @@ MAYOKA-Farben (Tokens `--mk-*`: Orange `#fb8a40`, Hellblau `#5cc0de`) und Logo (
 das Logo erscheint nur, wenn der Partnername „MAYOKA“ enthält.
 
 ## Inhaltliche Regeln
+- **Einfache Sprache** für alle Texte, die Nutzer sehen – auch automatische (Tagestipp, Tipp der Woche, Mitteilungen, Hinweise):
+  Regeln und Wortliste in `docs/einfache-sprache.md` (Sätze höchstens 16 Wörter, Alltagswörter, Fachwörter erklären,
+  Studien so beschreiben: was untersucht, was herausgekommen, wie sicher). `scripts/check_text.mjs` prüft das bei
+  `npm run check` und `npm run build`; ein Verstoß stoppt den Bau. `npm run texte` zeigt zusätzlich Hinweise.
+  Kennzeichnungen selbsterklärend als Wort-Schild (z. B. „Vorhersage“, „Kalender“), nicht als Punkt oder Symbol.
 - Begriffe: „Longevity“ als Leitbegriff, dazu Wellness, Gesundheit, Auszeit. Longevity als Thema, nie als Versprechen.
 - Sauerstoff-Sole-Inhalationsraum immer als Ergänzung, nie als Therapie oder Heilversprechen.
 - Partner-Hinweise: dezent, auf allen Seiten, als „Partner-Angebot“ gekennzeichnet, pro Tag ausblendbar;
   bei COPD, Asthma und Allergie erst unter den medizinischen Inhalten mit Hinweis „kein Ersatz für ärztliche Behandlung“.
+  Beim Tagestipp (`partnerLine()` in `src/tips.js`): nur in der App, nie in Mitteilungen; nur an Tagen mit trüber Luft,
+  Ozon, vielen Pollen oder Kälte; nur im Umkreis von 45 km um Dornbirn; höchstens alle 3 Tage.
 - Medizinische Texte: PubMed-Quellen mit DOI-Link, Evidenzstufe nennen (RCT, Metaanalyse, Beobachtungsstudie …),
   Nullbefunde erwähnen, Herstellerangaben von unabhängigen Belegen trennen, aktuellen Forschungsstand prüfen.
 - Standort nur nach ausdrücklicher Freischaltung per Häkchen; bleibt auf dem Gerät.
