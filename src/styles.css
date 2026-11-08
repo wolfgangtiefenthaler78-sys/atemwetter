@@ -165,7 +165,8 @@ table.codes td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-alig
 .s-filter{display:flex;gap:8px;flex-wrap:wrap}
 .al-groups{display:flex;flex-direction:column;gap:12px}
 .al-group{display:flex;flex-direction:column;gap:6px}
-.mk-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);vertical-align:2px;margin-left:2px}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.02em;line-height:1.3;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);vertical-align:2px;white-space:nowrap}
+.tag-v{border-color:var(--accent);color:var(--accent)}
 .sd-pot{margin:0;font-size:.9rem}
 .season .s-row{border-radius:10px}
 .season .s-row.active{background:var(--accent-soft)}

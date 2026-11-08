@@ -1,7 +1,7 @@
 /* Atemwetter – Oberfläche. Daten und Speichern kommen über `api` (src/data.js). */
 import qrcode from 'qrcode-generator';
 import { POLLEN_NAMES, POLLEN_TH, LEVELS, pollenLevel, SEASON_GROUPS, SEASON, SEASON_BY, POT, MN, MS, phase } from './pollen.js';
-import { dailyTip, weeklyTip, isoWeek } from './tips.js';
+import { dailyTip, weeklyTip, isoWeek, partnerLine } from './tips.js';
 import { createNotifier, loadSettings, saveSettings, platform as notePlatform } from './notify.js';
 export function startApp(D, api){
 const $ = id => document.getElementById(id);
@@ -18,12 +18,12 @@ window.__AW = { PLACES, STATE, curPlace: () => curPlace(), get placeId(){ return
 
 /* ---------- Luftqualität ---------- */
 const BANDS = [
-  {max:20,  name:'Gut',            color:'var(--q1)', text:'Saubere Luft im Tal. Ein guter Tag für Bewegung draußen und zum Lüften.'},
-  {max:40,  name:'Recht gut',      color:'var(--q2)', text:'Die Luft ist überwiegend sauber. Für die meisten Menschen gibt es keine Einschränkungen.'},
-  {max:60,  name:'Mäßig',          color:'var(--q3)', text:'Für die meisten unproblematisch. Wer empfindliche Atemwege hat, legt anstrengende Einheiten im Freien eher kürzer an.'},
-  {max:80,  name:'Schlecht',       color:'var(--q4)', text:'Erhöhte Belastung. Empfindliche Personen reduzieren Anstrengung im Freien und lüften zu ruhigeren Tageszeiten.'},
-  {max:100, name:'Sehr schlecht',  color:'var(--q5)', text:'Hohe Belastung. Anstrengung im Freien möglichst vermeiden, besonders mit Atemwegserkrankung.'},
-  {max:1e9, name:'Extrem schlecht',color:'var(--q6)', text:'Sehr hohe Belastung. Aufenthalte im Freien kurz halten.'}];
+  {max:20,  name:'Gut',            color:'var(--q1)', text:'Saubere Luft. Ein guter Tag für Bewegung draußen und zum Lüften.'},
+  {max:40,  name:'Recht gut',      color:'var(--q2)', text:'Die Luft ist meist sauber. Für fast alle Menschen gibt es keine Einschränkungen.'},
+  {max:60,  name:'Mäßig',          color:'var(--q3)', text:'Für die meisten Menschen kein Problem. Wer empfindliche Atemwege hat, strengt sich draußen besser kürzer an.'},
+  {max:80,  name:'Schlecht',       color:'var(--q4)', text:'Die Luft ist belastet. Empfindliche Menschen strengen sich draußen weniger an. Lüften besser zu ruhigeren Zeiten.'},
+  {max:100, name:'Sehr schlecht',  color:'var(--q5)', text:'Die Luft ist stark belastet. Anstrengung draußen möglichst meiden, vor allem mit einer Lungenkrankheit.'},
+  {max:1e9, name:'Extrem schlecht',color:'var(--q6)', text:'Die Luft ist sehr stark belastet. Nur kurz ins Freie gehen.'}];
 const band = v => BANDS.find(b => v <= b.max);
 const fmt = (n,d=0) => Number(n).toLocaleString('de-AT',{minimumFractionDigits:d,maximumFractionDigits:d});
 const dayName = iso => new Date(iso+'T12:00:00').toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long'});
@@ -47,15 +47,15 @@ function renderToday(){
   $('verdict').textContent = b.name;
   $('aqi-dot').style.background = b.color;
   $('aqi-val').textContent = t.aqi_max;
-  $('lede').textContent = b.text + ' Angegeben ist der höchste Stundenwert des Tages.';
+  $('lede').textContent = b.text + ' Die Zahl ist der höchste Wert einer Stunde an diesem Tag.';
   $('scale-bar').innerHTML = BANDS.map(x => '<i style="background:'+x.color+'"></i>').join('');
   $('scale-marker').style.left = Math.min(100, t.aqi_max / 120 * 100) + '%';
 
   const P = [
-    {k:'pm25', n:'Feinstaub PM2,5', s:'Tagesmittel · WHO-Richtwert 15', lim:15, u:'µg/m³'},
-    {k:'pm10', n:'Feinstaub PM10',  s:'Tagesmittel · WHO-Richtwert 45', lim:45, u:'µg/m³'},
-    {k:'no2',  n:'Stickstoffdioxid',s:'Tagesmittel · WHO-Richtwert 25', lim:25, u:'µg/m³'},
-    {k:'o3_max',n:'Ozon',           s:'Spitzenstunde · WHO-Richtwert 100 (8 h)', lim:100, u:'µg/m³'}];
+    {k:'pm25', n:'Feinstaub PM2,5', s:'sehr feiner Staub · Durchschnitt des Tages · WHO-Richtwert 15', lim:15, u:'µg/m³'},
+    {k:'pm10', n:'Feinstaub PM10',  s:'feiner Staub · Durchschnitt des Tages · WHO-Richtwert 45', lim:45, u:'µg/m³'},
+    {k:'no2',  n:'Stickstoffdioxid',s:'vor allem aus Abgasen · Durchschnitt des Tages · WHO-Richtwert 25', lim:25, u:'µg/m³'},
+    {k:'o3_max',n:'Ozon',           s:'höchste Stunde · WHO-Richtwert 100 (für 8 Stunden)', lim:100, u:'µg/m³'}];
   $('pollutants').innerHTML = P.map(p => {
     const v = t[p.k]; const pct = v / p.lim * 100;
     return '<div class="row"><div class="name"><b>'+p.n+'</b><small>'+p.s+'</small></div>'+
@@ -68,11 +68,11 @@ function renderToday(){
   box.hidden = !inv || inv.level === 'na';
   box.className = 'note inv-' + (inv ? inv.level : 'keine');
   const INV = {
-    stark:'Kaum Wind und feuchte Luft am Morgen, oft mit Nebel oder Hochnebel. Abgase und Feinstaub verteilen sich dann kaum und bleiben bodennah, besonders in Tälern. Bewegung im Freien eher auf die Mittagszeit legen oder in höhere Lagen ausweichen.',
-    leicht:'Schwacher Wind am Morgen, der Luftaustausch ist eingeschränkt. Zum Lüften eignet sich die Tagesmitte besser als der frühe Morgen.',
-    keine:'Genug Wind am Morgen, die Luft wird gut durchmischt.'};
-  $('h-inv').textContent = inv ? ({stark:'Austauscharme Wetterlage',leicht:'Eingeschränkter Luftaustausch',keine:'Gute Durchmischung'})[inv.level] || 'Luftaustausch' : 'Keine Angabe';
-  $('inv-text').textContent = inv ? INV[inv.level] : 'Für heute liegen keine Temperaturdaten vor.';
+    stark:'Am Morgen kaum Wind und feuchte Luft, oft mit Nebel. Abgase und Feinstaub bleiben dann am Boden, vor allem in Tälern. Geh besser zu Mittag ins Freie. Oder weiter hinauf, über den Nebel.',
+    leicht:'Am Morgen wenig Wind. Die Luft wird nur wenig ausgetauscht. Lüfte besser zu Mittag als am frühen Morgen.',
+    keine:'Am Morgen genug Wind. Die Luft wird gut ausgetauscht.'};
+  $('h-inv').textContent = inv ? ({stark:'Kaum Luftaustausch',leicht:'Wenig Luftaustausch',keine:'Guter Luftaustausch'})[inv.level] || 'Luftaustausch' : 'Keine Angabe';
+  $('inv-text').textContent = inv ? INV[inv.level] : 'Für heute gibt es keine Wetterdaten.';
   $('inv-num').textContent = !inv || inv.level==='na' ? '' : (typeof inv.wind==='number' ? '06–10 Uhr · Wind '+fmt(inv.wind,1)+' m/s · Luftfeuchte '+fmt(inv.rh)+' %' : '07:00 Uhr · '+fmt(inv.t2m,1)+' °C');
 
   const trueb = (inv && (inv.level==='stark' || inv.level==='leicht')) || t.aqi_max > 40;
@@ -81,10 +81,10 @@ function renderToday(){
   const lvl = (v,k) => { const L = pollenLevel(k,v); return [L.name, [0,25,60,100][L.i]]; };
   const pol = t.pollen || {};
   const active = Object.keys(PN).filter(k => (pol[k]||0) >= 1);
-  $('pollen').innerHTML = t.pollen == null ? '<p class="muted" style="padding-top:10px">Tagesgenaue Pollenwerte sind in dieser Version noch nicht eingebunden. Den Blühkalender und Tipps findest du im Allergie-Check.</p>' : active.length ? active.map(k => {
+  $('pollen').innerHTML = t.pollen == null ? '<p class="muted" style="padding-top:10px">Für heute gibt es noch keine Pollenwerte. Den Blüh-Kalender und Tipps findest du im Allergie-Check.</p>' : active.length ? active.map(k => {
     const [l,w] = lvl(pol[k],k);
     return '<div class="row"><div class="name"><b>'+PN[k]+'</b><small>Tageshöchstwert</small></div><div class="meter"><span class="'+(l==='hoch'?'over':'')+'" style="width:'+w+'%"></span></div><div class="val"><span class="num">'+fmt(pol[k])+'</span> <small>Körner/m³ · '+l+'</small></div></div>';
-  }).join('') : '<p class="muted" style="padding-top:10px">Im Modell ist heute keine relevante Pollenbelastung für Erle, Birke, Gräser, Beifuß oder Ambrosia zu sehen.</p>';
+  }).join('') : '<p class="muted" style="padding-top:10px">Heute fliegen laut Vorhersage kaum Pollen von Erle, Birke, Gräsern, Beifuß oder Ambrosia.</p>';
 
   renderSpark(t);
   $('days').innerHTML = days.map((d,i) => { const bb = band(d.aqi_max);
@@ -123,19 +123,19 @@ function seasonDetail(P, selM, isNow){
   const axis = MS.map((x,i)=>'<span'+(i===selM?' class="sel"':'')+'>'+x[0]+'</span>').join('');
   const mon = isNow ? 'jetzt im '+MN[selM] : 'im '+MN[selM];
   let box;
-  if(ph===2) box = '<div class="sd-box w2"><b>Warnung: '+(P.g===3?'Hauptsaison ':'Hauptblüte ')+mon+'</b><span>'+(isNow?'Jetzt ist':'In dieser Zeit ist')+' mit der stärksten Belastung durch '+P.pn+' zu rechnen. Zeit im Freien bewusst planen, tagsüber eher kurz und kräftig lüften und die verordneten Medikamente bereithalten.</span></div>';
-  else if(ph===1){ const before = selM < P.pk[0]; box = '<div class="sd-box w1"><b>Aktiv: '+P.n+' fliegt '+mon+'</b><span>'+(before ? 'Die Saison beginnt, die Hauptblüte folgt meist im '+pkTxt+'.' : 'Die Hauptblüte ist vorbei, der Pollenflug klingt langsam ab.')+'</span></div>'; }
-  else { const nx = (P.ms[0]-selM+12)%12; box = '<div class="sd-box w0"><b>Ruht '+mon+'</b><span>Nächster Beginn meist im '+MN[P.ms[0]]+(nx?' (in '+nx+' Monat'+(nx>1?'en':'')+')':'')+', Hauptblüte im '+pkTxt+'.</span></div>'; }
+  if(ph===2) box = '<div class="sd-box w2"><b>Warnung: '+(P.g===3?'Hauptsaison ':'Hauptblüte ')+mon+'</b><span>'+(isNow?'Jetzt':'In dieser Zeit')+' fliegen die meisten '+P.pn+'. Zeit draußen gut planen. Tagsüber kurz und kräftig lüften. Deine Medikamente bereithalten.</span></div>';
+  else if(ph===1){ const before = selM < P.pk[0]; box = '<div class="sd-box w1"><b>Aktiv: '+P.n+' fliegt '+mon+'</b><span>'+(before ? 'Die Saison beginnt. Am stärksten wird es meist im '+pkTxt+'.' : 'Die stärkste Zeit ist vorbei. Es fliegen langsam weniger Pollen.')+'</span></div>'; }
+  else { const nx = (P.ms[0]-selM+12)%12; box = '<div class="sd-box w0"><b>Ruht '+mon+'</b><span>Die Saison beginnt meist im '+MN[P.ms[0]]+(nx?' (in '+nx+' Monat'+(nx>1?'en':'')+')':'')+'. Am stärksten im '+pkTxt+'.</span></div>'; }
   let today = '';
   if(isNow){
     if(P.k){ const d = curDays()[todayIndex()] || {}, v = (d.pollen||{})[P.k]||0, L = pollenLevel(P.k, v);
       today = '<p class="sd-today"><span class="dot" style="background:'+L.c+'"></span>Heute in '+curPlace().name+' laut Modell: <b>'+L.name+'</b>'+(v>=1?' <span class="num muted">('+fmt(v)+' Körner/m³)</span>':'')+'</p>'; }
-    else today = '<p class="sd-today muted">Für '+P.n+' gibt es keine tagesgenaue Prognose von Copernicus, nur den Kalender.</p>';
+    else today = '<p class="sd-today muted">Für '+P.n+' gibt es keine Tageswerte. Atemwetter zeigt nur die übliche Blütezeit.</p>';
   }
   return '<div class="sd" id="'+id+'">'+
     '<div class="sd-strip" aria-hidden="true">'+strip+'</div><div class="sd-axis" aria-hidden="true">'+axis+'</div>'+
     '<div class="sd-legend" aria-hidden="true"><span><i class="ph ph0"></i>ruht</span><span><i class="ph ph1"></i>fliegt</span><span><i class="ph ph2"></i>Hauptblüte</span></div>'+
-    '<p class="sd-pot">Allergiepotenzial: <b>'+POT[P.pot]+'</b>'+(P.g===3?' · Pilzsporen':'')+'</p>' + box + today + (P.note?'<p class="muted sd-note">'+P.note+'</p>':'') + '</div>';
+    '<p class="sd-pot">Löst Allergien aus: <b>'+['','selten','manchmal','oft'][P.pot]+'</b>'+(P.g===3?' · Pilzsporen':'')+'</p>' + box + today + (P.note?'<p class="muted sd-note">'+P.note+'</p>':'') + '</div>';
 }
 function renderSeason(nowMonth){
   // Saisonkalender als einfache Liste mit Monats-Schieberegler; Antippen einer Pollenart klappt die Jahresübersicht auf
@@ -145,7 +145,7 @@ function renderSeason(nowMonth){
   const flying = pool.filter(P=>P.ms.includes(selM) && (selOnly || P.pot>=2)).map(P=>P.n);
   $('al-month').value = selM;
   $('al-month').setAttribute('aria-valuetext', MN[selM] + (isNow?' (jetzt)':''));
-  $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? (selOnly?'Es fliegen: ':'Wichtig: ')+flying.join(', ') : (selOnly?'Keine deiner Arten in Saison':'Kaum relevanter Pollenflug'))+'</small>';
+  $('al-month-out').innerHTML = '<b>'+MN[selM]+'</b>'+(isNow?' · jetzt':'')+'<br><small>'+(flying.length ? (selOnly?'Es fliegen: ':'Wichtig: ')+flying.join(', ') : (selOnly?'Keine deiner Arten in Saison':'Kaum Pollen in der Luft'))+'</small>';
   $('al-month-now').hidden = isNow;
   const mine = myAllergens.length && !seasonAll;
   $('al-sfilter').hidden = !myAllergens.length;
@@ -157,7 +157,7 @@ function renderSeason(nowMonth){
     const st = ph===2 ? [P.g===3?'Hauptsaison':'Hauptblüte','peak'] : ph===1 ? [isNow?'fliegt jetzt':'fliegt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
     const bar = MS.map((x,i)=>'<span class="cell'+(P.ms.includes(i)?' on':'')+(i===selM?' now':'')+'"></span>').join('');
     return '<div class="s-row'+(ph?' active':'')+(open?' open':'')+'"><button type="button" class="s-btn" data-n="'+P.id+'" aria-expanded="'+open+'"'+(open?' aria-controls="sd-'+P.id+'"':'')+'>'+
-      '<span class="s-head"><b>'+P.n+(P.k?' <span class="mk-dot" title="Tagesprognose verfügbar"></span>':'')+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-right"><span class="s-st '+st[1]+'">'+st[0]+'</span><span class="s-chev" aria-hidden="true"></span></span></span>'+
+      '<span class="s-head"><b>'+P.n+'</b>'+(P.k?' <span class="tag tag-v">Vorhersage</span>':'')+'<span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-right"><span class="s-st '+st[1]+'">'+st[0]+'</span><span class="s-chev" aria-hidden="true"></span></span></span>'+
       '<span class="s-bar" aria-hidden="true">'+bar+'</span></button>'+(open ? seasonDetail(P, selM, isNow) : '')+'</div>';
   };
   $('al-season').innerHTML = SEASON_GROUPS.map((g,gi)=>{ const L = list.filter(P=>P.g===gi); return L.length ? '<div class="s-group eyebrow">'+g+'</div>'+L.map(row).join('') : ''; }).join('') +
@@ -176,8 +176,8 @@ function renderPollenTable(days, ti, modelKeys){
   const hasModel = days.some(d=>d.pollen) && modelKeys.length;
   const CAL = [['ruht','var(--q1)'],['Saison','var(--q3)'],['Hauptblüte','var(--q4)']];
   const head = '<thead><tr><th>Art</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead>';
-  const mRows = hasModel ? modelKeys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b> <span class="mk-dot" aria-label="Tagesprognose"></span></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('') : '';
-  const cRows = calRows.map(P=>'<tr><td><b>'+P.n+'</b> <small class="muted">Kalender</small></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
+  const mRows = hasModel ? modelKeys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b> <span class="tag tag-v">Vorhersage</span></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('') : '';
+  const cRows = calRows.map(P=>'<tr><td><b>'+P.n+'</b> <span class="tag">Kalender</span></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
   $('al-table').innerHTML = head+'<tbody>'+mRows+cRows+'</tbody>';
   $('al-days-sec').hidden = !(mRows || cRows);
 }
@@ -187,7 +187,7 @@ function renderAllergy(){
   const sel = myModel();
   const keys = myAllergens.length ? sel : Object.keys(POLLEN_NAMES);   // Arten mit Tageswerten
   $('al-chips').innerHTML = SEASON_GROUPS.map((g,gi)=>'<div class="al-group"><div class="eyebrow">'+g+'</div><div class="chips">'+
-    SEASON.filter(P=>P.g===gi).map(P=>'<button class="chip" type="button" data-k="'+P.id+'" aria-pressed="'+myAllergens.includes(P.id)+'">'+P.n+(P.k?' <span class="mk-dot" aria-label="mit Tagesprognose"></span>':'')+'</button>').join('')+'</div></div>').join('');
+    SEASON.filter(P=>P.g===gi).map(P=>'<button class="chip" type="button" data-k="'+P.id+'" aria-pressed="'+myAllergens.includes(P.id)+'">'+P.n+(P.k?' <span class="tag tag-v">Vorhersage</span>':'')+'</button>').join('')+'</div></div>').join('');
   const nowM = new Date().getMonth();
   const calSel = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]) : SEASON.filter(P=>P.pot>=2)).filter(P=>!P.k);
   const calNow = calSel.filter(P=>P.ms.includes(nowM)), calPeak = calNow.filter(P=>P.pk.includes(nowM));
@@ -201,10 +201,10 @@ function renderAllergy(){
     $('al-dot').style.background = peak.length ? 'var(--q4)' : inSeason.length ? 'var(--q3)' : 'var(--q1)';
     $('al-pill').textContent = pillTxt;
     $('al-lede').textContent = inSeason.length
-      ? 'Laut Kalender ist jetzt typischerweise Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tagesgenaue Messwerte bietet der Österreichische Pollenwarndienst.' : '')
-      : 'Für ' + (myAllergens.length ? 'deine Auswahl' : 'die wichtigsten Pollenarten') + ' ist laut Kalender gerade keine Saison. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.';
+      ? 'Laut Kalender ist jetzt meist Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tageswerte gibt es beim Österreichischen Pollenwarndienst.' : '')
+      : 'Für ' + (myAllergens.length ? 'deine Auswahl' : 'die wichtigsten Pollenarten') + ' ist laut Kalender gerade keine Saison. In der Heizzeit stören eher Hausstaub-Milben oder Schimmel in der Wohnung.';
     renderPollenTable(days, ti, []);
-    $('al-times-text').textContent = 'Allgemein gilt: In der Pollenzeit lieber kurz und kräftig lüften, nach einem Regenguss ist die Luft oft für einige Zeit pollenärmer. Für Feinstaub und Luftaustausch siehe die Ansicht „Heute“.';
+    $('al-times-text').textContent = 'In der Pollenzeit kurz und kräftig lüften. Nach Regen sind oft weniger Pollen in der Luft. Feinstaub und Luftaustausch findest du unter „Heute“.';
     renderSeason(nowM);
     renderHint('allergie', 'Zum Abschalten zwischendurch:');
     return;
@@ -212,26 +212,26 @@ function renderAllergy(){
   const lv = keys.map(k=>({k, v:(t.pollen||{})[k]||0, L:pollenLevel(k,(t.pollen||{})[k])})).sort((a,b)=>b.L.i-a.L.i||b.v-a.v);
   const worst = lv[0].L;
   const V = ['Pollenfreier Tag','Geringe Belastung','Mäßige Belastung','Hohe Belastung'];
-  const LED = ['Im Modell fliegen heute keine relevanten Pollen'+(myAllergens.length?' deiner Arten':'')+'. ',
-    'Es fliegen einzelne Pollen. Sehr empfindliche Menschen können leichte Beschwerden bemerken.',
-    'Spürbare Belastung. Wer allergisch reagiert, plant Zeit draußen bewusst und hält die verordneten Medikamente bereit.',
-    'Starke Belastung. Aufenthalte im Freien möglichst kurz halten, Fenster tagsüber eher geschlossen lassen.'];
+  const LED = ['Laut Vorhersage fliegen heute kaum Pollen'+(myAllergens.length?' deiner Arten':'')+'. ',
+    'Es fliegen einzelne Pollen. Sehr empfindliche Menschen spüren vielleicht leichte Beschwerden.',
+    'Es fliegen spürbar viele Pollen. Mit Allergie: Zeit draußen gut planen und die Medikamente bereithalten.',
+    'Es fliegen sehr viele Pollen. Nur kurz ins Freie gehen. Fenster tagsüber eher geschlossen lassen.'];
   const m = new Date(t.date+'T12:00:00').getMonth();
   const offSeason = worst.i===0 && (m>=9 || m<=0);
   $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
   $('al-verdict').textContent = V[worst.i]; $('al-dot').style.background = worst.c;
   $('al-pill').textContent = pillTxt;
-  $('al-lede').textContent = (LED[worst.i].trim() + calTxt + (offSeason && !calNow.length ? ' Die Pollensaison ruht gerade. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.' : '')).trim();
+  $('al-lede').textContent = (LED[worst.i].trim() + calTxt + (offSeason && !calNow.length ? ' Die Pollen-Saison ruht gerade. In der Heizzeit stören eher Hausstaub-Milben oder Schimmel in der Wohnung.' : '')).trim();
   renderPollenTable(days, ti, keys);
   // beste Lüftzeit aus Stundenwerten
   const ph = t.pollen_hourly || {};
   const active = keys.filter(k=>ph[k]);
   let txt;
-  if(!active.length){ txt = 'Heute gibt es keine Einschränkung durch Pollen. Lüften und Rausgehen ist jederzeit möglich; für Feinstaub und Luftaustausch siehe die Ansicht „Heute“.'; }
+  if(!active.length){ txt = 'Heute stören keine Pollen. Lüften und Rausgehen geht jederzeit. Feinstaub und Luftaustausch findest du unter „Heute“.'; }
   else {
     const sum = h => active.reduce((a,k)=>a+(ph[k][h]||0),0);
     let lo=6, hi=6; for(let h=6; h<=21; h++){ if(sum(h)<sum(lo)) lo=h; if(sum(h)>sum(hi)) hi=h; }
-    txt = 'Laut Modell sind deine Pollen heute gegen '+String(lo).padStart(2,'0')+':00 Uhr am niedrigsten, ein guter Zeitpunkt zum Stoßlüften. Die höchste Belastung wird gegen '+String(hi).padStart(2,'0')+':00 Uhr erwartet; dann Aktivitäten im Freien eher meiden.';
+    txt = 'Laut Vorhersage fliegen heute gegen '+String(lo).padStart(2,'0')+':00 Uhr am wenigsten Pollen. Dann ist ein guter Zeitpunkt zum Lüften. Die meisten Pollen fliegen gegen '+String(hi).padStart(2,'0')+':00 Uhr. Dann besser drinnen bleiben.';
   }
   $('al-times-text').textContent = txt;
   renderHint('allergie', 'Zum Abschalten zwischendurch:');
@@ -248,33 +248,33 @@ function renderCopd(){
   const t = days[todayIndex()], inv = t.inversion || {};
   const F = [];
   const add = (lvl, name, val, tip) => F.push({lvl, name, val, tip});
-  if(t.aqi_max > 60) add(2,'Luftqualität insgesamt','Index '+t.aqi_max,'Anstrengung draußen heute reduzieren, Spaziergänge kurz halten.');
-  else if(t.aqi_max > 40) add(1,'Luftqualität insgesamt','Index '+t.aqi_max,'Längere Belastung im Freien eher in die Tagesmitte legen.');
-  else add(0,'Luftqualität insgesamt','Index '+t.aqi_max,'Gute Bedingungen für Bewegung im Freien.');
+  if(t.aqi_max > 60) add(2,'Luftqualität insgesamt','Index '+t.aqi_max,'Heute draußen weniger anstrengen. Spaziergänge kurz halten.');
+  else if(t.aqi_max > 40) add(1,'Luftqualität insgesamt','Index '+t.aqi_max,'Längere Wege draußen besser zu Mittag.');
+  else add(0,'Luftqualität insgesamt','Index '+t.aqi_max,'Gut für Bewegung im Freien.');
   if(t.pm25 > 25) add(2,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Deutlich über dem WHO-Richtwert. Nicht an stark befahrenen Straßen gehen.');
-  else if(t.pm25 > 15 || t.pm10 > 45) add(1,'Feinstaub',fmt(t.pm25,1)+' µg/m³ PM2,5','Über dem WHO-Richtwert. Hauptverkehrsstraßen meiden, zu ruhigen Zeiten lüften.');
+  else if(t.pm25 > 15 || t.pm10 > 45) add(1,'Feinstaub',fmt(t.pm25,1)+' µg/m³ PM2,5','Über dem WHO-Richtwert. Große Straßen meiden. Zu ruhigen Zeiten lüften.');
   else add(0,'Feinstaub',fmt(t.pm25,1)+' µg/m³ PM2,5','Unter dem WHO-Richtwert.');
-  if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Typisch an Verkehrsachsen. Wege abseits der Hauptstraßen wählen.');
-  if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind, belastete Luft bleibt morgens bodennah. Draußen eher mittags unterwegs sein.');
+  if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Kommt vor allem von Autos. Wege abseits großer Straßen wählen.');
+  if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind. Am Morgen bleibt schlechte Luft am Boden. Besser zu Mittag hinausgehen.');
   if(typeof inv.t2m === 'number'){
-    if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Viele Betroffene empfinden eisige Luft als belastend. Schal locker vor Mund und Nase, durch die Nase atmen, Tempo drosseln.');
-    else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Bei kalter Luft hilft vielen ein Schal vor Mund und Nase und ein ruhiger Start.');
+    if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Eisige Luft ist für viele anstrengend. Schal locker vor Mund und Nase. Durch die Nase atmen, langsam gehen.');
+    else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Bei kalter Luft hilft vielen ein Schal vor Mund und Nase. Langsam starten.');
   }
   const worst = Math.max(...F.map(f=>f.lvl));
   const V = [
-    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für die geplante Bewegung, gern auch etwas länger.'},
-    {n:'Achtsam', c:'var(--q3)', l:'Ein paar Faktoren sprechen heute für etwas mehr Ruhe beim Draußensein. Bewegung bleibt wichtig, nur besser dosiert.'},
-    {n:'Vorsicht', c:'var(--q4)', l:'Heute ist die Belastung für empfindliche Atemwege erhöht. Bewegung lieber drinnen oder kurz und langsam; Notfallspray griffbereit.'}][worst];
+    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung, gern auch etwas länger.'},
+    {n:'Achtsam', c:'var(--q3)', l:'Heute draußen etwas ruhiger machen. Bewegung bleibt wichtig, nur in kleineren Portionen.'},
+    {n:'Vorsicht', c:'var(--q4)', l:'Heute ist die Luft für empfindliche Atemwege belastet. Bewegung lieber drinnen oder kurz und langsam. Notfallspray griffbereit halten.'}][worst];
   $('copd-date').textContent = 'Mit COPD · ' + curPlace().name + ' · ' + dayName(t.date);
   $('copd-verdict').textContent = V.n; $('copd-dot').style.background = V.c; $('copd-lede').textContent = V.l;
   $('copd-pill').textContent = F.filter(f=>f.lvl>0).length ? F.filter(f=>f.lvl>0).length + ' Faktor' + (F.filter(f=>f.lvl>0).length>1?'en':'') + ' zu beachten' : 'Nichts Besonderes zu beachten';
   const LC = ['var(--q2)','var(--q3)','var(--q4)'];
   $('copd-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
   const POS = [
-    ['Kutschersitz','Sitzend leicht vorbeugen, Unterarme auf die Oberschenkel stützen, Schultern sinken lassen.'],
-    ['Torwartstellung','Stehend die Knie leicht beugen, Hände oberhalb der Knie aufstützen, Oberkörper leicht vor.'],
-    ['Wandstellung','Mit Gesäß und Rücken an die Wand lehnen, Füße eine Fußlänge vor, Arme hängen lassen.']];
-  renderHint('copd', 'Eine ruhige Pause abseits des Alltags:');
+    ['Kutschersitz','Im Sitzen leicht nach vorn beugen. Unterarme auf die Oberschenkel stützen. Schultern locker lassen.'],
+    ['Torwartstellung','Im Stehen die Knie leicht beugen. Hände über den Knien abstützen. Oberkörper leicht nach vorn.'],
+    ['Wandstellung','Mit Po und Rücken an die Wand lehnen. Füße eine Fußlänge nach vorn. Arme hängen lassen.']];
+  renderHint('copd', 'Eine ruhige Pause vom Alltag:');
   $('copd-pos').innerHTML = POS.map(p=>'<div class="day"><span class="d">'+p[0]+'</span><span class="muted" style="font-size:.92rem">'+p[1]+'</span></div>').join('');
 }
 $('copd-to-lippen').addEventListener('click', ()=>{ cur = EX.find(e=>e.id==='lippen'); renderEx(); location.hash='atmen'; show('atmen'); window.scrollTo(0,0); });
@@ -285,42 +285,42 @@ function renderAsthma(){
   const t = days[todayIndex()], inv = t.inversion || {};
   const F = [];
   const add = (lvl, name, val, tip) => F.push({lvl, name, val, tip});
-  if(t.aqi_max > 60) add(2,'Luftqualität insgesamt','Index '+t.aqi_max,'Anstrengung im Freien heute reduzieren, Bedarfsspray griffbereit halten.');
-  else if(t.aqi_max > 40) add(1,'Luftqualität insgesamt','Index '+t.aqi_max,'Längere Belastung im Freien gut dosieren.');
-  else add(0,'Luftqualität insgesamt','Index '+t.aqi_max,'Gute Bedingungen für Bewegung im Freien.');
+  if(t.aqi_max > 60) add(2,'Luftqualität insgesamt','Index '+t.aqi_max,'Heute draußen weniger anstrengen. Notfallspray griffbereit halten.');
+  else if(t.aqi_max > 40) add(1,'Luftqualität insgesamt','Index '+t.aqi_max,'Längere Wege draußen in kleinen Portionen.');
+  else add(0,'Luftqualität insgesamt','Index '+t.aqi_max,'Gut für Bewegung im Freien.');
   if(typeof t.o3_max === 'number'){
-    if(t.o3_max > 140) add(2,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Deutlich erhöht. Sport im Freien auf den Vormittag legen oder nach drinnen verlegen.');
-    else if(t.o3_max > 100) add(1,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Über dem WHO-Richtwert. Anstrengung draußen eher am Vormittag.');
+    if(t.o3_max > 140) add(2,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Viel Ozon. Sport am Vormittag machen oder drinnen.');
+    else if(t.o3_max > 100) add(1,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Über dem WHO-Richtwert. Anstrengung draußen besser am Vormittag.');
   }
   if(t.pm25 > 25) add(2,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Deutlich über dem WHO-Richtwert. Nicht an stark befahrenen Straßen gehen.');
-  else if(t.pm25 > 15) add(1,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Über dem WHO-Richtwert. Hauptverkehrsstraßen meiden, zu ruhigen Zeiten lüften.');
+  else if(t.pm25 > 15) add(1,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Über dem WHO-Richtwert. Große Straßen meiden. Zu ruhigen Zeiten lüften.');
   else add(0,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Unter dem WHO-Richtwert.');
-  if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Typisch an Verkehrsachsen. Wege abseits der Hauptstraßen wählen.');
+  if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Kommt vor allem von Autos. Wege abseits großer Straßen wählen.');
   const keys = myAllergens.length ? myModel() : Object.keys(POLLEN_NAMES);
   let pw = {i:0, k:null, v:0};
   keys.forEach(k=>{ const v=(t.pollen||{})[k]||0, L=pollenLevel(k,v); if(L.i>pw.i) pw={i:L.i, k, v}; });
-  if(pw.i>=3) add(2,'Pollen: '+POLLEN_NAMES[pw.k],'hoch','Bei allergischem Asthma ein starker Auslöser. Zeit draußen kurz halten, nach dem Heimkommen Gesicht und Haare waschen.');
-  else if(pw.i===2) add(1,'Pollen: '+POLLEN_NAMES[pw.k],'mäßig','Bei allergischem Asthma spürbar. Lüften zu pollenarmen Zeiten, siehe Allergie-Check.');
-  else add(0,'Pollen', pw.i ? 'gering' : 'keine','Im Modell heute kein relevanter Pollenflug'+(myAllergens.length?' deiner Arten':'')+'.');
+  if(pw.i>=3) add(2,'Pollen: '+POLLEN_NAMES[pw.k],'hoch','Bei Asthma mit Allergie ein starker Auslöser. Nur kurz hinaus. Danach Gesicht und Haare waschen.');
+  else if(pw.i===2) add(1,'Pollen: '+POLLEN_NAMES[pw.k],'mäßig','Bei Asthma mit Allergie spürbar. Lüften, wenn wenig Pollen fliegen (siehe Allergie-Check).');
+  else add(0,'Pollen', pw.i ? 'gering' : 'keine','Laut Vorhersage fliegen heute kaum Pollen'+(myAllergens.length?' deiner Arten':'')+'.');
   { const m = new Date().getMonth(), cal = myAllergens.map(k=>SEASON_BY[k]).filter(P=>!P.k && P.pot>=2 && P.pk.includes(m));
-    if(cal.length) add(1,'Laut Kalender: '+cal.map(P=>P.n).join(', '),'Hauptblüte','Für diese Arten gibt es keine Tagesprognose. Bei allergischem Asthma jetzt besonders auf Beschwerden achten.'); }
+    if(cal.length) add(1,'Laut Kalender: '+cal.map(P=>P.n).join(', '),'Hauptblüte','Für diese Arten gibt es keine Tageswerte. Achte jetzt besonders auf Beschwerden.'); }
   if(typeof inv.t2m === 'number'){
-    if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Kalte, trockene Luft kann die Atemwege verengen. Schal vor Mund und Nase, ruhig aufwärmen, Tempo drosseln.');
-    else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Vor Bewegung draußen gut aufwärmen und durch die Nase atmen.');
+    if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Kalte, trockene Luft kann die Atemwege eng machen. Schal vor Mund und Nase. Ruhig aufwärmen, langsam gehen.');
+    else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Vor Bewegung draußen gut aufwärmen. Durch die Nase atmen.');
   }
-  if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind, belastete Luft bleibt morgens bodennah. Draußen eher mittags unterwegs sein.');
+  if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind. Am Morgen bleibt schlechte Luft am Boden. Besser zu Mittag hinausgehen.');
   const worst = Math.max(...F.map(f=>f.lvl));
   const V = [
-    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung im Freien, das Bedarfsspray trotzdem dabei.'},
-    {n:'Achtsam', c:'var(--q3)', l:'Ein paar Auslöser sind heute erhöht. Bewegung bleibt wichtig, nur besser dosiert und gut aufgewärmt.'},
-    {n:'Vorsicht', c:'var(--q4)', l:'Heute sind starke Auslöser unterwegs. Anstrengung im Freien kurz halten, Bedarfsspray griffbereit, auf Warnzeichen achten.'}][worst];
+    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung im Freien. Das Notfallspray trotzdem mitnehmen.'},
+    {n:'Achtsam', c:'var(--q3)', l:'Heute gibt es ein paar Auslöser. Bewegung bleibt wichtig: lieber kürzer und gut aufgewärmt.'},
+    {n:'Vorsicht', c:'var(--q4)', l:'Heute gibt es starke Auslöser. Draußen nur kurz anstrengen. Notfallspray griffbereit, auf Warnzeichen achten.'}][worst];
   const n = F.filter(f=>f.lvl>0).length;
   $('as-date').textContent = 'Mit Asthma · ' + curPlace().name + ' · ' + dayName(t.date);
   $('as-verdict').textContent = V.n; $('as-dot').style.background = V.c; $('as-lede').textContent = V.l;
   $('as-pill').textContent = n ? n + ' Auslöser zu beachten' : 'Nichts Besonderes zu beachten';
   const LC = ['var(--q2)','var(--q3)','var(--q4)'];
   $('as-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
-  renderHint('asthma', 'Eine ruhige Pause abseits des Alltags:');
+  renderHint('asthma', 'Eine ruhige Pause vom Alltag:');
 }
 $('as-to-bauch').addEventListener('click', ()=>{ cur = EX.find(e=>e.id==='bauch'); renderEx(); location.hash='atmen'; show('atmen'); window.scrollTo(0,0); });
 $('as-to-allergie').addEventListener('click', ()=>{ location.hash='allergie'; show('allergie'); window.scrollTo(0,0); });
@@ -406,33 +406,33 @@ window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 /* ---------- Atemübungen ---------- */
 const EX = [
   {id:'ruhig', name:'Ruhige Atmung', short:'Ruhig 4–6',
-   desc:'Langsames Atmen mit etwa sechs Atemzügen pro Minute. Die Ausatmung ist länger als die Einatmung.',
-   steps:['Aufrecht und bequem sitzen, Schultern locker.','Vier Sekunden ruhig durch die Nase einatmen.','Sechs Sekunden langsam ausatmen.','Nicht tiefer atmen als angenehm, nur langsamer.'],
+   desc:'Langsam atmen, etwa 6 Atemzüge pro Minute. Das Ausatmen dauert länger als das Einatmen.',
+   steps:['Aufrecht und bequem sitzen. Schultern locker.','4 Sekunden ruhig durch die Nase einatmen.','6 Sekunden langsam ausatmen.','Nicht tiefer atmen als angenehm, nur langsamer.'],
    phases:[['Einatmen',4,1],['Ausatmen',6,.55]],
-   level:'Systematische Übersicht · Gesunde',
-   ev:'Eine systematische Übersicht von 15 kleinen Studien an Gesunden fand bei Atmung unter zehn Zügen pro Minute eine höhere Herzratenvariabilität und mehr berichtete Entspannung. Die Studien sind klein und methodisch uneinheitlich; Aussagen zu Erkrankungen lassen sich daraus nicht ableiten.',
+   level:'Übersicht kleiner Studien · Gesunde',
+   ev:'Forschende haben 15 kleine Studien mit gesunden Menschen zusammengefasst. Wer langsamer als 10-mal pro Minute atmete, fühlte sich entspannter. Auch der Herzschlag passte sich besser an. Das ist ein Zeichen für Entspannung. Die Studien sind klein und unterschiedlich gemacht. Über Krankheiten sagen sie nichts.',
    src:[['Zaccaro et al. 2018, Frontiers in Human Neuroscience','10.3389/fnhum.2018.00353']]},
   {id:'lippen', name:'Lippenbremse', short:'Lippenbremse',
-   desc:'Durch die Nase ein, durch locker aufeinanderliegende Lippen doppelt so lange aus. Eine bekannte Technik aus der Atemphysiotherapie.',
-   steps:['Zwei Sekunden durch die Nase einatmen.','Die Lippen locker aufeinanderlegen, als wolltest du sanft eine Kerze flackern lassen.','Vier Sekunden gegen den leichten Widerstand der Lippen ausatmen.','Nicht pressen, die Ausatmung bleibt mühelos.'],
+   desc:'Durch die Nase ein. Durch locker geschlossene Lippen doppelt so lange aus. Eine bekannte Übung aus der Atemtherapie.',
+   steps:['2 Sekunden durch die Nase einatmen.','Lippen locker aufeinanderlegen. Als wolltest du eine Kerze sanft flackern lassen.','4 Sekunden durch die fast geschlossenen Lippen ausatmen.','Nicht pressen. Das Ausatmen bleibt leicht.'],
    phases:[['Einatmen',2,1],['Ausatmen',4,.55]],
-   level:'Cochrane-Review · COPD',
-   ev:'Ein Cochrane-Review (16 Studien, 1.233 Teilnehmende mit COPD) fand nach vier bis 15 Wochen Atemübungen eine bessere Gehstrecke; für die Lippenbremse allein stammt dieser Befund aus einer einzelnen Studie. Auf Atemnot und Lebensqualität zeigten sich keine einheitlichen Effekte. Nebenwirkungen wurden nicht berichtet.',
+   level:'Cochrane-Übersicht · COPD',
+   ev:'Eine Cochrane-Übersicht ist eine besonders sorgfältige Zusammenfassung vieler Studien. Diese hier fasst 16 Studien mit 1.233 Menschen mit COPD zusammen. Sie machten 4 bis 15 Wochen lang Atemübungen. Danach konnten sie weiter gehen. Das wurde mit einem Geh-Test gemessen: Wie weit kommt man in 6 Minuten? Für die Lippenbremse allein zeigt das aber nur 1 Studie. Bei Atemnot und Lebensqualität war kein klarer Effekt zu sehen. Nebenwirkungen gab es keine.',
    src:[['Holland et al. 2012, Cochrane Database of Systematic Reviews','10.1002/14651858.CD008250.pub2']]},
   {id:'bauch', name:'Bauchatmung', short:'Bauchatmung',
-   desc:'Die Atembewegung wandert in den Bauch. Eine Hand liegt auf dem Bauch, eine auf der Brust.',
-   steps:['Eine Hand auf den Bauch, eine auf die Brust legen.','Drei Sekunden durch die Nase einatmen; die Bauchhand hebt sich, die Brusthand bleibt fast ruhig.','Vier Sekunden entspannt ausatmen.','Mit der Zeit kann die Ausatmung länger werden.'],
+   desc:'Du atmest in den Bauch statt in die Brust. Eine Hand liegt auf dem Bauch, eine auf der Brust.',
+   steps:['Eine Hand auf den Bauch, eine auf die Brust legen.','3 Sekunden durch die Nase einatmen. Die Hand am Bauch hebt sich. Die Hand auf der Brust bleibt fast ruhig.','4 Sekunden entspannt ausatmen.','Mit der Zeit darf das Ausatmen länger werden.'],
    phases:[['Einatmen',3,1],['Ausatmen',4,.55]],
-   level:'Cochrane-Review · Asthma',
-   ev:'Ein Cochrane-Review zu Atemübungen bei Erwachsenen mit Asthma (22 Studien, 2.880 Teilnehmende, überwiegend Yoga-Atmung) fand eine moderat gesicherte Verbesserung der Lebensqualität nach drei Monaten. Bei Asthmasymptomen und dem Einsekundenvolumen war das Ergebnis nicht eindeutig. Zur Zwerchfellatmung allein gab es nur eine Studie.',
+   level:'Cochrane-Übersicht · Asthma',
+   ev:'Eine Cochrane-Übersicht ist eine besonders sorgfältige Zusammenfassung vieler Studien. Diese hier fasst 22 Studien mit 2.880 Erwachsenen mit Asthma zusammen. Meist ging es um Atemübungen aus dem Yoga. Nach 3 Monaten war die Lebensqualität besser. Dieses Ergebnis ist mittelmäßig sicher. Bei den Asthma-Beschwerden und der Lungenfunktion war das Ergebnis nicht klar. Zur Bauchatmung allein gab es nur 1 Studie.',
    src:[['Santino et al. 2020, Cochrane Database of Systematic Reviews','10.1002/14651858.CD001277.pub4']]},
   {id:'box', name:'Box-Atmung', short:'Box 4-4-4-4',
-   desc:'Vier gleich lange Phasen: einatmen, halten, ausatmen, halten. Viele nutzen sie zum Sammeln vor einer Anspannung.',
-   steps:['Vier Sekunden einatmen.','Vier Sekunden die Luft locker halten.','Vier Sekunden ausatmen.','Vier Sekunden leer halten, dann von vorn.'],
+   desc:'Auch „Navy-SEAL-Atmung“ genannt. Vier gleich lange Teile wie die Seiten einer Box: einatmen, halten, ausatmen, halten. Gut, um vor einer stressigen Situation ruhig zu werden.',
+   steps:['4 Sekunden einatmen.','4 Sekunden die Luft locker halten.','4 Sekunden ausatmen.','4 Sekunden ohne Luft locker warten. Dann von vorn.'],
    phases:[['Einatmen',4,1],['Halten',4,1],['Ausatmen',4,.55],['Halten',4,.55]],
-   level:'Erfahrungswert',
-   ev:'Zur Box-Atmung als eigener Technik gibt es kaum kontrollierte Studien. Sie wird aus Erfahrung genutzt. Mit Atemwegserkrankung oder Herzproblemen die Haltephasen weglassen oder kürzen.',
-   src:[]}];
+   level:'Erfahrungsbericht und Studie · Gesunde',
+   ev:'Bekannt gemacht hat die Box-Atmung Mark Divine, ein früherer Navy SEAL. Die Navy SEALs sind eine Spezial-Einheit der US-Marine. Sie nutzen die Übung, um unter Stress ruhig und klar zu bleiben. Das ist ein Erfahrungsbericht, keine Studie. Eine Studie mit Zufalls-Gruppen aus Stanford hat Atemübungen getestet. Gesunde Erwachsene übten 1 Monat lang 5 Minuten am Tag. Die Atemübungen hoben die Stimmung mehr als eine Meditation. Am meisten half aber eine Übung mit langem Ausatmen, nicht die Box-Atmung. Mit Lungen- oder Herzkrankheit: die Haltezeiten weglassen oder kürzen.',
+   src:[['Balban et al. 2023, Cell Reports Medicine','10.1016/j.xcrm.2022.100895']]}];
 let cur = EX[0], timer = null, endAt = 0, running = false;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -612,6 +612,28 @@ function renderDailyTip(){
   $('dtip-ex').textContent = 'Übung für heute: ' + t.ex.name; $('dtip-ex').dataset.ex = t.ex.id;
   $('dtip-prof').querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(!!profile[c.dataset.p])));
   $('dtip-on').checked = dtipSet.on; $('dtip-hour').value = String(dtipSet.hour);
+  renderDtipPartner(t);
+}
+// Dezenter MAYOKA-Hinweis beim Tagestipp: nur in der App, nur an passenden Tagen, nur in der Nähe von Dornbirn,
+// höchstens alle 3 Tage, als Partner-Angebot gekennzeichnet und für den Tag ausblendbar.
+function renderDtipPartner(t){
+  const box = $('hint-dtip'), p = STATE.partner || {}, today = todayKey();
+  const dorn = PLACES.find(q => q.id === 'dornbirn'), cp = curPlace();
+  const near = !!(dorn && typeof cp.lat === 'number' && distKm(cp.lat, cp.lon, dorn.lat, dorn.lon) <= 45);
+  const last = LS.get('aw-dtip-p-last');
+  const recent = last && last !== today && (new Date(today) - new Date(last)) / 864e5 < 3;
+  const line = partnerLine(t);
+  if(!line || !near || recent || !/mayoka/i.test(p.name || '') || p.showHints === false || LS.get('aw-hint-dtip') === today){ box.hidden = true; return; }
+  LS.set('aw-dtip-p-last', today);
+  box.innerHTML = '';
+  const tag = document.createElement('span'); tag.className = 'eyebrow'; tag.style.width = '100%'; tag.textContent = 'Partner-Angebot · ' + p.name;
+  const tx = document.createElement('span'); tx.textContent = line;
+  const go = document.createElement('button'); go.type = 'button'; go.className = 'linkish'; go.textContent = 'Mehr erfahren'; go.addEventListener('click', goPartner);
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.setAttribute('aria-label', 'Hinweis für heute ausblenden'); x.textContent = '×';
+  x.addEventListener('click', () => { LS.set('aw-hint-dtip', today); box.hidden = true; });
+  const n = document.createElement('small'); n.className = 'muted'; n.style.width = '100%'; n.textContent = 'Eine Wellness-Ergänzung für deine Auszeit. Kein Ersatz für ärztliche Behandlung.';
+  box.append(tag, tx, go, x, n);
+  box.hidden = false;
 }
 function dtipHelp(){
   const pf = notePlatform(), h = $('dtip-on-help');
@@ -686,7 +708,7 @@ const IS_APP = !!(window.__AWNative && window.__AWNative.getPosition);
 function geoHelp(code){
   if(code===1) return IS_APP
     ? 'Die App darf deinen Standort nicht verwenden. Erlauben: Android-Einstellungen › Apps › Atemwetter › Berechtigungen › Standort › „Nur während der Nutzung“.'
-    : 'Dein Browser blockiert den Standort für diese Seite. Erlauben: auf das Schloss- oder Einstellungs-Symbol links neben der Adresse tippen › Standort › Zulassen, dann die Seite neu laden.';
+    : 'Dein Browser blockiert den Standort für diese Seite. So erlaubst du es: links neben der Adresse auf das Schloss tippen › Standort › Zulassen. Dann die Seite neu laden.';
   if(code===2) return 'Der Standort ist am Gerät gerade nicht verfügbar. Ist der Standortdienst (GPS) eingeschaltet? Am Handy: von oben wischen › „Standort“ antippen.';
   return 'Die Standortbestimmung hat zu lange gedauert. Am besten im Freien oder mit eingeschaltetem WLAN nochmals versuchen.';
 }

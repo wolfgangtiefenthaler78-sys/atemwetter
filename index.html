@@ -40,12 +40,12 @@
     <div class="picker-head"><h2>Ort wählen</h2><button class="btn ghost small" id="picker-close" type="button">Schließen</button></div>
     <div class="auto" id="auto-box" hidden>
       <button class="btn" id="locate-now" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06ZM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>Meinen Standort verwenden</button>
-      <label class="check" for="auto-loc"><input type="checkbox" id="auto-loc"><span><b>Bei jedem Start automatisch</b><br><small class="muted">Die App zeigt die Werte für deinen genauen Standort. Dein Standort bleibt auf deinem Gerät; für die Werte wird nur ein auf rund 1 km gerundeter Punkt an GeoSphere Austria geschickt. Du kannst das jederzeit wieder abschalten. <a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/datenschutz.html#standort" target="_blank" rel="noopener">Mehr zum Datenschutz</a></small></span></label>
+      <label class="check" for="auto-loc"><input type="checkbox" id="auto-loc"><span><b>Bei jedem Start automatisch</b><br><small class="muted">Die App zeigt dann die Werte für deinen genauen Standort. Dein Standort bleibt auf deinem Gerät. Wir schicken nur einen ungefähren Punkt an GeoSphere Austria (auf etwa 1 km gerundet). Du kannst das jederzeit abschalten. <a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/datenschutz.html#standort" target="_blank" rel="noopener">Mehr zum Datenschutz</a></small></span></label>
       <p class="status" id="auto-status" aria-live="polite"></p>
     </div>
     <label class="f" for="place-search">Ort suchen<input id="place-search" placeholder="z. B. Feldkirch, Wien, St. Gallen" autocomplete="off"></label>
     <div class="place-list" id="place-list" role="listbox" aria-label="Orte"></div>
-    <p class="muted" style="font-size:.85rem">Dein Ort fehlt? Wähle den nächstgelegenen. Weitere Orte lassen sich ergänzen.</p>
+    <p class="muted" style="font-size:.85rem">Dein Ort fehlt? Wähle den nächsten Ort. Weitere Orte können wir ergänzen.</p>
   </section>
 
   <main id="v-heute" class="block" style="gap:32px">
@@ -61,6 +61,7 @@
       <h3 id="dtip-title"></h3>
       <p id="dtip-text"></p>
       <div><button class="btn ghost small" id="dtip-ex" type="button"></button></div>
+      <div class="hint" id="hint-dtip" hidden></div>
       <div class="dtip-set" id="dtip-set" hidden>
         <div class="dtip-sub">
           <div class="eyebrow">Was betrifft dich?</div>
@@ -84,7 +85,7 @@
     <section class="block" aria-labelledby="h-stoffe">
       <h2 id="h-stoffe">Was heute in der Luft ist</h2>
       <div class="rows" id="pollutants"></div>
-      <p class="muted" style="font-size:.85rem">Balken: Anteil am WHO-Richtwert von 2021. Rot heißt: Richtwert überschritten.</p>
+      <p class="muted" style="font-size:.85rem">Der Balken zeigt, wie nah der Wert am Richtwert der Weltgesundheitsorganisation (WHO) liegt. Rot heißt: Der Richtwert ist überschritten.</p>
     </section>
 
     <section class="block" aria-labelledby="h-verlauf">
@@ -152,7 +153,7 @@
     <section class="evidence"><span class="badge" id="ex-level"></span><p id="ex-ev"></p><p id="ex-src" style="font-size:.85rem"></p></section>
     </div>
     </div>
-    <p class="muted" style="font-size:.88rem">Bei Schwindel, Kribbeln oder zunehmender Atemnot die Übung beenden und normal weiteratmen. Atemübungen ersetzen keine ärztliche Behandlung; verordnete Medikamente und Notfallpläne gelten weiter.</p>
+    <p class="muted" style="font-size:.88rem">Bei Schwindel, Kribbeln oder mehr Atemnot: Übung beenden und normal weiteratmen. Atemübungen ersetzen keine ärztliche Behandlung. Deine Medikamente und dein Notfallplan gelten weiter.</p>
   </main>
 
   <main id="v-copd" class="block" hidden style="gap:30px">
@@ -169,7 +170,7 @@
 
     <section class="block" aria-labelledby="h-copd-pos">
       <h2 id="h-copd-pos">Wenn die Luft knapp wird</h2>
-      <p class="muted">Stellungen, die das Atmen erleichtern, kombiniert mit der Lippenbremse.</p>
+      <p class="muted">Diese Haltungen machen das Atmen leichter. Am besten zusammen mit der Lippenbremse.</p>
       <div class="days" id="copd-pos"></div>
       <div><button class="btn" id="copd-to-lippen" type="button">Lippenbremse mit Anleitung üben</button></div>
     </section>
@@ -177,18 +178,20 @@
     <section class="note inv-stark" aria-labelledby="h-copd-warn">
       <div class="eyebrow">Warnzeichen</div>
       <h2 id="h-copd-warn">Wann ärztliche Hilfe nötig ist</h2>
-      <p><b>Praxis kontaktieren oder deinen Aktionsplan befolgen</b>, wenn über mehr als einen Tag die Atemnot deutlich stärker ist als sonst, mehr oder zäherer Auswurf kommt, der Auswurf gelb oder grün wird oder Fieber dazukommt.</p>
-      <p><b>Notruf 144</b> bei schwerer Atemnot in Ruhe, wenn Sprechen kaum möglich ist, bei bläulichen Lippen, Benommenheit oder Verwirrtheit, oder bei Schmerzen in der Brust.</p>
+      <p><b>Ruf deine Praxis an oder folge deinem Aktionsplan, wenn:</b></p>
+      <ul class="al-tips"><li>die Atemnot länger als einen Tag deutlich stärker ist als sonst,</li><li>du mehr Schleim abhustest oder er zäher ist,</li><li>der Schleim gelb oder grün wird,</li><li>Fieber dazukommt.</li></ul>
+      <p><b>Ruf den Notruf 144 (Deutschland: 112) bei:</b></p>
+      <ul class="al-tips"><li>starker Atemnot, auch in Ruhe,</li><li>wenn Sprechen kaum möglich ist,</li><li>bläulichen Lippen,</li><li>Benommenheit oder Verwirrtheit,</li><li>Schmerzen in der Brust.</li></ul>
     </section>
 
     <section class="evidence" aria-labelledby="h-copd-ev">
       <span class="badge">Was die Forschung sagt</span>
       <h2 id="h-copd-ev" style="font-size:1.05rem">Luftqualität und COPD</h2>
-      <p>Eine Metaanalyse von 59 Studien fand für alle untersuchten Schadstoffe einen Zusammenhang zwischen kurzfristig erhöhter Belastung und dem Risiko akuter COPD-Verschlechterungen. Der Effekt pro 10 µg/m³ ist für den Einzelnen klein (wenige Prozent), summiert sich aber über viele belastete Tage. Es handelt sich um Beobachtungsstudien, keine Experimente.</p>
-      <p>Zu den Atemstellungen: In einer kleinen Messstudie mit 16 Personen mit fortgeschrittener COPD war die selbst gewählte Lieblingsstellung, oft aufrecht oder vorgebeugt sitzend, mit geringerer Atemarbeit und weniger Atemnot verbunden. Das ist ein Hinweis auf den Mechanismus, kein Wirksamkeitsnachweis.</p>
+      <p><b>Luft und COPD:</b> Forschende haben 59 Studien zusammengefasst (Fachwort: Metaanalyse). Ergebnis: An Tagen mit mehr Schadstoffen in der Luft verschlechtert sich COPD etwas häufiger. Pro 10 µg/m³ mehr steigt das Risiko nur um wenige Prozent. Über viele belastete Tage summiert sich das aber. Es sind Beobachtungs-Studien: Sie zeigen einen Zusammenhang, aber keinen sicheren Beweis.</p>
+      <p><b>Haltungen bei Atemnot:</b> Eine kleine Mess-Studie hat 16 Menschen mit schwerer COPD untersucht. In ihrer Lieblingshaltung brauchten sie weniger Kraft zum Atmen. Sie hatten auch weniger Atemnot. Meist war das aufrechtes oder nach vorn gebeugtes Sitzen. Die Studie erklärt, warum die Haltungen helfen können. Ob sie im Alltag wirken, zeigt sie nicht.</p>
       <p style="font-size:.85rem">Quellen: Li et al. 2016, International Journal of COPD, <a target="_blank" rel="noopener" href="https://doi.org/10.2147/COPD.S122282">doi.org/10.2147/COPD.S122282</a>; Elbehairy et al. 2026, European Respiratory Journal, <a target="_blank" rel="noopener" href="https://doi.org/10.1183/13993003.01348-2025">doi.org/10.1183/13993003.01348-2025</a></p>
     </section>
-    <p class="muted" style="font-size:.88rem">Diese Seite gibt allgemeine Hinweise. Dein persönlicher Aktionsplan und die Absprachen mit deiner Lungenfachärztin oder deinem Lungenfacharzt gehen immer vor.</p>
+    <p class="muted" style="font-size:.88rem">Diese Seite gibt allgemeine Hinweise. Dein Aktionsplan und die Absprachen mit deiner Lungenärztin oder deinem Lungenarzt gehen immer vor.</p>
     <div class="hint" id="hint-copd" hidden></div>
   </main>
 
@@ -202,18 +205,19 @@
     <section class="block" aria-labelledby="h-as-why">
       <h2 id="h-as-why">Was heute zählt</h2>
       <div class="rows" id="as-factors"></div>
-      <p class="muted" style="font-size:.85rem">Pollen werden für deine Auswahl im Allergie-Check bewertet, sonst für alle Pollenarten im Modell.</p>
+      <p class="muted" style="font-size:.85rem">Bei den Pollen zählen die Arten aus deinem Allergie-Check. Ohne Auswahl zählen alle Arten mit Tages-Vorhersage.</p>
     </section>
 
     <section class="block" aria-labelledby="h-as-day">
       <h2 id="h-as-day">Gut durch den Tag</h2>
       <ul class="al-tips">
-        <li>Das Bedarfsspray (Notfallspray) immer dabeihaben, auch an guten Tagen.</li>
-        <li>Die verordnete Dauertherapie wie besprochen weiter anwenden, auch wenn es dir gut geht.</li>
-        <li>Vor Sport zehn bis fünfzehn Minuten locker aufwärmen. Hat deine Ärztin oder dein Arzt ein Spray vor dem Sport verordnet, dieses wie besprochen anwenden.</li>
-        <li>Bei kalter Luft einen Schal locker vor Mund und Nase tragen und möglichst durch die Nase atmen.</li>
-        <li>An Ozontagen Anstrengung im Freien eher auf den Vormittag legen; Ozon steigt meist bis zum Nachmittag an.</li>
-        <li>Die Inhalationstechnik ab und zu in der Apotheke oder Praxis zeigen lassen. Kleine Fehler sind häufig und kosten Wirkung.</li>
+        <li>Dein Notfallspray (Bedarfsspray) immer dabeihaben, auch an guten Tagen.</li>
+        <li>Deine Dauer-Medikamente wie besprochen weiter nehmen, auch wenn es dir gut geht.</li>
+        <li>Vor dem Sport 10 bis 15 Minuten locker aufwärmen.</li>
+        <li>Hast du ein Spray für vor dem Sport? Dann nimm es so, wie du es mit deiner Ärztin oder deinem Arzt besprochen hast.</li>
+        <li>Bei kalter Luft: Schal locker vor Mund und Nase. Möglichst durch die Nase atmen.</li>
+        <li>Ozon steigt meist bis zum Nachmittag. An Ozon-Tagen Sport im Freien besser am Vormittag.</li>
+        <li>Lass dir ab und zu in der Apotheke oder Praxis zeigen, wie du richtig inhalierst. Kleine Fehler sind häufig. Dann wirkt das Spray schlechter.</li>
       </ul>
       <div class="cta-row"><button class="btn" id="as-to-bauch" type="button">Bauchatmung mit Anleitung üben</button><button class="btn ghost" id="as-to-allergie" type="button">Allergie-Check öffnen</button></div>
     </section>
@@ -221,20 +225,22 @@
     <section class="note inv-stark" aria-labelledby="h-as-warn">
       <div class="eyebrow">Warnzeichen</div>
       <h2 id="h-as-warn">Wann ärztliche Hilfe nötig ist</h2>
-      <p><b>Praxis kontaktieren oder deinen Asthma-Aktionsplan befolgen</b>, wenn du das Bedarfsspray öfter brauchst als sonst, du nachts wegen Husten oder Atemnot aufwachst oder dein Peak-Flow-Wert deutlich unter deinem gewohnten Wert liegt.</p>
-      <p><b>Notruf 144</b> (in Deutschland 112) wenn das Bedarfsspray nicht oder nur kurz hilft, Sprechen nur noch in einzelnen Worten möglich ist, bei bläulichen Lippen, Benommenheit oder Verwirrtheit.</p>
+      <p><b>Ruf deine Praxis an oder folge deinem Asthma-Aktionsplan, wenn:</b></p>
+      <ul class="al-tips"><li>du dein Notfallspray öfter brauchst als sonst,</li><li>du nachts wegen Husten oder Atemnot aufwachst,</li><li>dein Peak-Flow-Wert deutlich niedriger ist als sonst (Peak-Flow: wie kräftig du ausatmen kannst).</li></ul>
+      <p><b>Ruf den Notruf 144 (Deutschland: 112), wenn:</b></p>
+      <ul class="al-tips"><li>dein Notfallspray nicht oder nur kurz hilft,</li><li>du nur noch einzelne Wörter sprechen kannst,</li><li>deine Lippen bläulich werden,</li><li>du benommen oder verwirrt bist.</li></ul>
     </section>
 
     <section class="evidence" aria-labelledby="h-as-ev">
       <span class="badge">Was die Forschung sagt</span>
       <h2 id="h-as-ev" style="font-size:1.05rem">Luft, Pollen und Asthma</h2>
-      <p><b>Schadstoffe</b> (Metaanalyse von 22 Beobachtungsstudien, Kinder und Erwachsene): An Tagen mit mehr Stickstoffdioxid, Feinstaub PM2,5 oder Ozon kamen etwas mehr Menschen wegen eines Asthmaanfalls in die Notaufnahme oder ins Spital, um etwa zwei bis drei Prozent je 10 µg/m³. Für den größeren Feinstaub PM10 und für Schwefeldioxid war der Zusammenhang nicht gesichert.</p>
-      <p><b>Pollen</b> (Metaanalyse, 14 Beobachtungsstudien): Bei Kindern und Jugendlichen stiegen die Notaufnahme-Besuche wegen Asthma um knapp zwei Prozent je zehn Gräserpollen pro m³. Für andere Pollenarten und für Erwachsene reichten die Daten nicht für eine gemeinsame Auswertung.</p>
-      <p><b>Kälte und Sport</b> (Leitlinie der American Thoracic Society): Neben Medikamenten nennt sie Aufwärmen vor dem Sport und bei kalter Luft einen Schutz, der die Atemluft anwärmt. Die Qualität der Belege für die einzelnen Empfehlungen reicht von niedrig bis hoch.</p>
-      <p><b>Atemübungen</b>: Ein Cochrane-Review fand eine moderat gesicherte Verbesserung der Lebensqualität, bei Beschwerden und Lungenfunktion kein eindeutiges Ergebnis. Details bei der Bauchatmung in „Atmen“.</p>
+      <p><b>Schadstoffe:</b> Forschende haben 22 Beobachtungs-Studien mit Kindern und Erwachsenen zusammengefasst (Fachwort: Metaanalyse). Manche Tage hatten mehr Stickstoffdioxid, Feinstaub PM2,5 oder Ozon in der Luft. An diesen Tagen kamen etwas mehr Menschen mit einem Asthma-Anfall ins Spital. Pro 10 µg/m³ waren es etwa 2 bis 3 Prozent mehr. Beim groben Feinstaub PM10 und bei Schwefeldioxid war kein sicherer Zusammenhang zu sehen.</p>
+      <p><b>Pollen:</b> Forschende haben 14 Beobachtungs-Studien zusammengefasst. Ergebnis: Mit mehr Gräserpollen hatten Kinder und Jugendliche öfter einen Asthma-Notfall. Pro 10 Pollen je m³ Luft waren es knapp 2 Prozent mehr. Zu anderen Pollen und zu Erwachsenen gab es zu wenige Daten.</p>
+      <p><b>Kälte und Sport:</b> Eine Leitlinie aus den USA (American Thoracic Society) gibt dazu Empfehlungen. Neben Medikamenten rät sie: vor dem Sport aufwärmen. Und bei Kälte die Atemluft anwärmen, etwa mit einem Schal. Wie gut die einzelnen Empfehlungen belegt sind, ist unterschiedlich.</p>
+      <p><b>Atemübungen:</b> Eine Cochrane-Übersicht ist eine besonders sorgfältige Zusammenfassung vieler Studien. Sie fand: Mit Atemübungen wurde die Lebensqualität besser. Dieses Ergebnis ist mittelmäßig sicher. Bei den Beschwerden und der Lungenfunktion war kein klarer Effekt zu sehen. Mehr dazu bei der Bauchatmung unter „Atmen“.</p>
       <p style="font-size:.85rem">Quellen: Orellano et al. 2017, PLOS ONE, <a target="_blank" rel="noopener" href="https://doi.org/10.1371/journal.pone.0174050">doi.org/10.1371/journal.pone.0174050</a>; Erbas et al. 2018, Allergy, <a target="_blank" rel="noopener" href="https://doi.org/10.1111/all.13407">doi.org/10.1111/all.13407</a>; Parsons et al. 2013, American Journal of Respiratory and Critical Care Medicine, <a target="_blank" rel="noopener" href="https://doi.org/10.1164/rccm.201303-0437ST">doi.org/10.1164/rccm.201303-0437ST</a>; Santino et al. 2020, Cochrane Database of Systematic Reviews, <a target="_blank" rel="noopener" href="https://doi.org/10.1002/14651858.CD001277.pub4">doi.org/10.1002/14651858.CD001277.pub4</a></p>
     </section>
-    <p class="muted" style="font-size:.88rem">Diese Seite gibt allgemeine Hinweise. Dein persönlicher Asthma-Aktionsplan und die Absprachen mit deiner Ärztin oder deinem Arzt gehen immer vor.</p>
+    <p class="muted" style="font-size:.88rem">Diese Seite gibt allgemeine Hinweise. Dein Asthma-Aktionsplan und die Absprachen mit deiner Ärztin oder deinem Arzt gehen immer vor.</p>
     <div class="hint" id="hint-asthma" hidden></div>
   </main>
 
@@ -249,13 +255,13 @@
       <h2 id="h-al-mine">Meine Allergien</h2>
       <p class="muted" style="font-size:.92rem">Tippe an, worauf du reagierst. Die Auswahl bleibt nur auf deinem Gerät gespeichert.</p>
       <div class="al-groups" id="al-chips" role="group" aria-label="Pollenarten und Sporen wählen"></div>
-      <p class="muted" style="font-size:.85rem"><span class="mk-dot" aria-hidden="true"></span> Mit Punkt markiert: tagesgenaue Prognose von Copernicus für deinen Ort. Für alle anderen Arten zeigt Atemwetter den Blühkalender.</p>
+      <p class="muted" style="font-size:.85rem"><span class="tag tag-v">Vorhersage</span> Für diese Arten gibt es jeden Tag Werte für deinen Ort (von Copernicus). Bei allen anderen zeigt Atemwetter, wann sie üblicherweise blühen.</p>
     </section>
 
     <section class="block" id="al-days-sec" aria-labelledby="h-al-days">
       <h2 id="h-al-days">Die nächsten drei Tage</h2>
       <div class="tablebox"><table class="codes al-table" id="al-table"></table></div>
-      <p class="muted" style="font-size:.85rem">Arten mit Punkt: Tageshöchstwerte in Pollenkörnern pro m³ Luft, Modellwerte von Copernicus. Arten mit „Kalender“: typische Blühzeit, keine Messung. Die Einteilung gering, mäßig, hoch ist grob und je Pollenart verschieden, weil schon wenige Ambrosia- oder Beifußpollen Beschwerden auslösen können.</p>
+      <p class="muted" style="font-size:.85rem"><span class="tag tag-v">Vorhersage</span> höchster Wert des Tages, in Pollen pro m³ Luft. Die Werte berechnet Copernicus. <span class="tag">Kalender</span> übliche Blütezeit, keine Messung. Gering, mäßig und hoch sind grobe Stufen. Bei Ambrosia und Beifuß reichen schon wenige Pollen für Beschwerden.</p>
     </section>
 
     <section class="note" id="al-times" aria-labelledby="h-al-times">
@@ -272,7 +278,7 @@
       </div>
       <div class="s-filter" id="al-sfilter" role="group" aria-label="Anzeige" hidden><button class="chip" type="button" data-f="mine" aria-pressed="true">Meine Auswahl</button><button class="chip" type="button" data-f="all" aria-pressed="false">Alle Arten</button></div>
       <div class="season" id="al-season"></div>
-      <p class="muted" style="font-size:.85rem">Typische Blütezeiten in Mitteleuropa. Je nach Witterung und Höhenlage beginnt die Saison früher oder später. Antippen zeigt Hauptblüte und Allergiepotenzial. Das Allergiepotenzial ist eine grobe Orientierung; wie stark jemand reagiert, ist sehr unterschiedlich.</p>
+      <p class="muted" style="font-size:.85rem">Übliche Blütezeiten in Mitteleuropa. Je nach Wetter und Höhe beginnt die Saison früher oder später. Tippe eine Art an: Dann siehst du die Hauptblüte und wie oft sie Allergien auslöst. Das ist nur ein grober Richtwert. Jeder Mensch reagiert anders.</p>
     </section>
 
     <section class="block" aria-labelledby="h-al-tips">
@@ -280,9 +286,9 @@
       <ul class="al-tips">
         <li>Abends Haare waschen, damit keine Pollen ins Kopfkissen gelangen.</li>
         <li>Getragene Kleidung nicht im Schlafzimmer ablegen.</li>
-        <li>Wäsche an Tagen mit hoher Belastung drinnen trocknen.</li>
-        <li>Nach Regen ist die Luft oft für einige Zeit pollenärmer, ein guter Moment für Spaziergänge.</li>
-        <li>Pollenschutzgitter an Schlafzimmerfenstern und Pollenfilter im Auto helfen, die Belastung drinnen niedrig zu halten.</li>
+        <li>An Tagen mit vielen Pollen die Wäsche drinnen trocknen.</li>
+        <li>Nach Regen sind oft weniger Pollen in der Luft. Ein guter Moment für einen Spaziergang.</li>
+        <li>Ein Pollenschutz-Gitter am Schlafzimmerfenster und ein Pollenfilter im Auto halten Pollen draußen.</li>
         <li>Eine Sonnenbrille schützt die Augen draußen etwas vor Pollen.</li>
       </ul>
     </section>
@@ -290,19 +296,19 @@
     <section class="evidence" aria-labelledby="h-al-ev">
       <span class="badge">Was die Forschung sagt</span>
       <h2 id="h-al-ev" style="font-size:1.05rem">Nasenspülung mit Salzlösung</h2>
-      <p>Eine Metaanalyse von neun randomisierten Studien (645 Teilnehmende) fand, dass Nasenspülungen mit 3-prozentiger Salzlösung Nasenbeschwerden und den Bedarf an Antihistaminika bei allergischem Schnupfen verringerten. Gegenüber einer normalen 0,9-prozentigen Lösung zeigte sich beim Medikamentenbedarf kein klarer Unterschied, und die Ergebnisse der Erwachsenenstudien waren sehr uneinheitlich.</p>
-      <p>Eine Metaanalyse zu Kindern und Jugendlichen (sieben Studien, 462 Teilnehmende) kam zu einem ähnlichen Ergebnis, stufte die Sicherheit der Evidenz aber als niedrig bis sehr niedrig ein, weil viele Studien ein hohes Verzerrungsrisiko hatten. Nebenwirkungen waren selten und leicht.</p>
-      <p>Wichtig: Diese Studien untersuchen die Nasenspülung, nicht das Einatmen von Solenebel. Ergänzend zur ärztlichen Behandlung, nicht als Ersatz.</p>
+      <p><b>Nasenspülung bei Heuschnupfen:</b> Forschende haben 9 Studien zusammengefasst (Fachwort: Metaanalyse). In allen Studien wurden die Gruppen per Zufall eingeteilt. Das macht die Ergebnisse verlässlicher. Ergebnis: Spülen mit 3-prozentiger Salzlösung linderte die Beschwerden in der Nase. Die Menschen brauchten auch weniger Allergie-Tabletten. Gegenüber normaler Salzlösung (0,9 Prozent) gab es dabei keinen klaren Unterschied. Die Ergebnisse bei Erwachsenen waren sehr unterschiedlich.</p>
+      <p>Eine zweite Zusammenfassung mit 7 Studien bei Kindern und Jugendlichen kam zu einem ähnlichen Ergebnis. Die Belege sind dort aber wenig sicher, weil viele Studien Schwächen hatten. Nebenwirkungen waren selten und leicht.</p>
+      <p>Wichtig: Diese Studien prüfen das Spülen der Nase. Das Einatmen von Sole-Nebel haben sie nicht untersucht. Nasenspülung ergänzt die ärztliche Behandlung. Sie ersetzt sie nicht.</p>
       <p style="font-size:.85rem">Quellen: Singh et al. 2025, Allergologia et Immunopathologia, <a target="_blank" rel="noopener" href="https://doi.org/10.15586/aei.v53i5.1409">doi.org/10.15586/aei.v53i5.1409</a>; Esmaeel et al. 2026, International Journal of Pediatric Otorhinolaryngology, <a target="_blank" rel="noopener" href="https://doi.org/10.1016/j.ijporl.2026.112973">doi.org/10.1016/j.ijporl.2026.112973</a></p>
     </section>
-    <p class="muted" style="font-size:.88rem">Bei Atemnot, pfeifender Atmung oder Schwellungen im Gesicht sofort ärztliche Hilfe holen, im Notfall 144. Ob eine Allergie besteht und welche Behandlung passt, klärt eine Allergologin oder ein Allergologe. Ausführliche Pollenprognosen bietet der Österreichische Pollenwarndienst unter polleninformation.at.</p>
+    <p class="muted" style="font-size:.88rem">Bei Atemnot, pfeifendem Atem oder Schwellungen im Gesicht: sofort ärztliche Hilfe holen, im Notfall 144. Ob du eine Allergie hast und was hilft, klärt eine Allergie-Ärztin oder ein Allergie-Arzt. Genaue Pollen-Vorhersagen gibt es beim Österreichischen Pollenwarndienst: polleninformation.at.</p>
     <div class="hint" id="hint-allergie" hidden></div>
   </main>
 
   <footer class="foot">
     <span id="f-stand"></span>
     <span>Daten: GeoSphere Austria, Data Hub (Lizenz CC BY 4.0), Prognosen der Luftgüte- und Wettermodelle für den gewählten Ort. Den Luftqualitätsindex berechnet Atemwetter selbst nach den überarbeiteten Bändern der Europäischen Umweltagentur. Pollen: enthält veränderte Informationen des Copernicus Atmosphere Monitoring Service 2026 (europäische Ensemble-Prognose); weder die Europäische Kommission noch das ECMWF sind für ihre Verwendung verantwortlich. Modellwerte können von Messstationen abweichen; amtliche Messwerte veröffentlichen die Umweltbehörden der Länder.</span>
-    <span>Atemwetter gibt allgemeine Hinweise und ersetzt keine medizinische Beratung. Im Notfall: Rettung 144, Euro-Notruf 112.</span>
+    <span>Atemwetter gibt allgemeine Hinweise. Es ersetzt keine ärztliche Beratung. Im Notfall: Rettung 144, Euro-Notruf 112.</span>
     <span>Atemwetter wird betrieben von MAYOKA andersch gsund OG, Dornbirn. Hinweise mit „Partner-Angebot“ sind Angebote von MAYOKA.</span>
     <nav class="foot-legal" aria-label="Rechtliches"><a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/impressum.html" target="_blank" rel="noopener">Impressum</a><a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a><a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/iphone.html" target="_blank" rel="noopener" id="foot-iphone">Fürs iPhone</a><a href="https://wolfgangtiefenthaler78-sys.github.io/atemwetter/android.html" target="_blank" rel="noopener" id="foot-android">Android-App</a></nav>
     <div class="foot-actions" id="foot-actions"></div>
@@ -323,7 +329,7 @@
     <div id="d-admin" class="dash-admin" hidden>
 
     <fieldset><legend>Tipp der Woche</legend>
-      <label class="check" for="d-tip-auto"><input type="checkbox" id="d-tip-auto"><span><b>Automatisch aus den Daten erstellen</b><br><small class="muted">Die App wählt jede Woche selbst einen passenden Tipp (Luftlage, Pollen-Hauptblüte, Kälte, Ozon oder ein allgemeiner Atem- und Alltagstipp), je Ort. Überschrift und Text unten werden dann nicht angezeigt.</small></span></label>
+      <label class="check" for="d-tip-auto"><input type="checkbox" id="d-tip-auto"><span><b>Automatisch aus den Daten erstellen</b><br><small class="muted">Die App wählt jede Woche selbst einen passenden Tipp für jeden Ort. Er richtet sich nach Luft, Pollen, Kälte oder Ozon. Überschrift und Text unten werden dann nicht angezeigt.</small></span></label>
       <label class="f">Überschrift<input id="d-tip-title" maxlength="90"></label>
       <label class="f">Text<textarea id="d-tip-text" maxlength="600"></textarea></label>
       <div class="controls" style="justify-content:flex-start"><span class="status" id="d-suggest-status"></span></div>
