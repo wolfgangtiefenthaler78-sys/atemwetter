@@ -176,7 +176,7 @@ function renderAllergy(){
 }
 $('al-chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; const k=b.dataset.k;
   myAllergens = myAllergens.includes(k) ? myAllergens.filter(x=>x!==k) : myAllergens.concat(k);
-  LS.set('aw-allergens', myAllergens.length ? myAllergens.join(',') : null); renderAllergy(); });
+  LS.set('aw-allergens', myAllergens.length ? myAllergens.join(',') : null); renderAllergy(); renderAsthma(); });
 $('to-allergie').addEventListener('click', ()=>{ location.hash='allergie'; show('allergie'); window.scrollTo(0,0); });
 
 /* ---------- COPD ---------- */
@@ -215,6 +215,50 @@ function renderCopd(){
   $('copd-pos').innerHTML = POS.map(p=>'<div class="day"><span class="d">'+p[0]+'</span><span class="muted" style="font-size:.92rem">'+p[1]+'</span></div>').join('');
 }
 $('copd-to-lippen').addEventListener('click', ()=>{ cur = EX.find(e=>e.id==='lippen'); renderEx(); location.hash='atmen'; show('atmen'); window.scrollTo(0,0); });
+
+/* ---------- Asthma ---------- */
+function renderAsthma(){
+  const days = curDays(); if(!days.length) return;
+  const t = days[todayIndex()], inv = t.inversion || {};
+  const F = [];
+  const add = (lvl, name, val, tip) => F.push({lvl, name, val, tip});
+  if(t.aqi_max > 60) add(2,'Luftqualität insgesamt','Index '+t.aqi_max,'Anstrengung im Freien heute reduzieren, Bedarfsspray griffbereit halten.');
+  else if(t.aqi_max > 40) add(1,'Luftqualität insgesamt','Index '+t.aqi_max,'Längere Belastung im Freien gut dosieren.');
+  else add(0,'Luftqualität insgesamt','Index '+t.aqi_max,'Gute Bedingungen für Bewegung im Freien.');
+  if(typeof t.o3_max === 'number'){
+    if(t.o3_max > 140) add(2,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Deutlich erhöht. Sport im Freien auf den Vormittag legen oder nach drinnen verlegen.');
+    else if(t.o3_max > 100) add(1,'Ozon',fmt(t.o3_max)+' µg/m³ Spitze','Über dem WHO-Richtwert. Anstrengung draußen eher am Vormittag.');
+  }
+  if(t.pm25 > 25) add(2,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Deutlich über dem WHO-Richtwert. Nicht an stark befahrenen Straßen gehen.');
+  else if(t.pm25 > 15) add(1,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Über dem WHO-Richtwert. Hauptverkehrsstraßen meiden, zu ruhigen Zeiten lüften.');
+  else add(0,'Feinstaub PM2,5',fmt(t.pm25,1)+' µg/m³','Unter dem WHO-Richtwert.');
+  if(t.no2 > 25) add(1,'Stickstoffdioxid',fmt(t.no2,1)+' µg/m³','Typisch an Verkehrsachsen. Wege abseits der Hauptstraßen wählen.');
+  const keys = myAllergens.length ? myAllergens : Object.keys(POLLEN_NAMES);
+  let pw = {i:0, k:null, v:0};
+  keys.forEach(k=>{ const v=(t.pollen||{})[k]||0, L=pollenLevel(k,v); if(L.i>pw.i) pw={i:L.i, k, v}; });
+  if(pw.i>=3) add(2,'Pollen: '+POLLEN_NAMES[pw.k],'hoch','Bei allergischem Asthma ein starker Auslöser. Zeit draußen kurz halten, nach dem Heimkommen Gesicht und Haare waschen.');
+  else if(pw.i===2) add(1,'Pollen: '+POLLEN_NAMES[pw.k],'mäßig','Bei allergischem Asthma spürbar. Lüften zu pollenarmen Zeiten, siehe Allergie-Check.');
+  else add(0,'Pollen', pw.i ? 'gering' : 'keine','Im Modell heute kein relevanter Pollenflug'+(myAllergens.length?' deiner Arten':'')+'.');
+  if(typeof inv.t2m === 'number'){
+    if(inv.t2m < -5) add(2,'Kalte Luft',fmt(inv.t2m,1)+' °C früh','Kalte, trockene Luft kann die Atemwege verengen. Schal vor Mund und Nase, ruhig aufwärmen, Tempo drosseln.');
+    else if(inv.t2m < 2) add(1,'Kühle Luft',fmt(inv.t2m,1)+' °C früh','Vor Bewegung draußen gut aufwärmen und durch die Nase atmen.');
+  }
+  if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind, belastete Luft bleibt morgens bodennah. Draußen eher mittags unterwegs sein.');
+  const worst = Math.max(...F.map(f=>f.lvl));
+  const V = [
+    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung im Freien, das Bedarfsspray trotzdem dabei.'},
+    {n:'Achtsam', c:'var(--q3)', l:'Ein paar Auslöser sind heute erhöht. Bewegung bleibt wichtig, nur besser dosiert und gut aufgewärmt.'},
+    {n:'Vorsicht', c:'var(--q4)', l:'Heute sind starke Auslöser unterwegs. Anstrengung im Freien kurz halten, Bedarfsspray griffbereit, auf Warnzeichen achten.'}][worst];
+  const n = F.filter(f=>f.lvl>0).length;
+  $('as-date').textContent = 'Mit Asthma · ' + curPlace().name + ' · ' + dayName(t.date);
+  $('as-verdict').textContent = V.n; $('as-dot').style.background = V.c; $('as-lede').textContent = V.l;
+  $('as-pill').textContent = n ? n + ' Auslöser zu beachten' : 'Nichts Besonderes zu beachten';
+  const LC = ['var(--q2)','var(--q3)','var(--q4)'];
+  $('as-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
+  renderHint('asthma', 'Eine ruhige Pause abseits des Alltags:');
+}
+$('as-to-bauch').addEventListener('click', ()=>{ cur = EX.find(e=>e.id==='bauch'); renderEx(); location.hash='atmen'; show('atmen'); window.scrollTo(0,0); });
+$('as-to-allergie').addEventListener('click', ()=>{ location.hash='allergie'; show('allergie'); window.scrollTo(0,0); });
 
 /* ---------- Inhalte ---------- */
 function renderContent(){
@@ -270,14 +314,14 @@ function renderHint(where, lead){
   const x = document.createElement('button'); x.type='button'; x.className='x'; x.setAttribute('aria-label','Hinweis für heute ausblenden'); x.textContent='×';
   x.addEventListener('click', ()=>{ LS.set('aw-hint-'+where, todayKey()); box.hidden = true; });
   box.append(tag, l, t, go, x);
-  if(where==='copd' || where==='allergie'){ const n=document.createElement('small'); n.className='muted'; n.style.width='100%'; n.textContent='Ein Longevity- und Wellness-Angebot für deine Auszeit, kein Ersatz für ärztliche Behandlung.'; box.appendChild(n); }
+  if(where==='copd' || where==='asthma' || where==='allergie'){ const n=document.createElement('small'); n.className='muted'; n.style.width='100%'; n.textContent='Ein Longevity- und Wellness-Angebot für deine Auszeit, kein Ersatz für ärztliche Behandlung.'; box.appendChild(n); }
   box.hidden = false;
 }
 
 /* ---------- Ansichten ---------- */
 function show(view){
-  if(!['atmen','copd','allergie'].includes(view)) view='heute';
-  $('v-heute').hidden = view!=='heute'; $('v-atmen').hidden = view!=='atmen'; $('v-copd').hidden = view!=='copd'; $('v-allergie').hidden = view!=='allergie';
+  if(!['atmen','copd','asthma','allergie'].includes(view)) view='heute';
+  $('v-heute').hidden = view!=='heute'; $('v-atmen').hidden = view!=='atmen'; $('v-copd').hidden = view!=='copd'; $('v-asthma').hidden = view!=='asthma'; $('v-allergie').hidden = view!=='allergie';
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.view===view)));
   if(view!=='atmen') stopBreath();
 }
@@ -468,7 +512,7 @@ function initAdmin(){
 }
 
 /* ---------- Ort wählen und Standort ---------- */
-function renderAll(){ renderToday(); renderCopd(); renderAllergy(); }
+function renderAll(){ renderToday(); renderCopd(); renderAsthma(); renderAllergy(); }
 window.__AW.rerender = () => { renderAll(); renderPlaces(); };
 window.__AW.setPlace = (id, auto) => setPlace(id, auto);
 window.__AW.setState = (st) => {
@@ -553,7 +597,7 @@ async function initGeo(){
   if(LS.get('aw-auto')==='1'){ $('auto-loc').checked = true; locate(false); }
 }
 
-renderToday(); renderContent(); renderEx(); renderCopd(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
+renderToday(); renderContent(); renderEx(); renderCopd(); renderAsthma(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
 initGeo();
 initAdmin();
 try{ if(window.__AW_RUNNING) localStorage.setItem('aw-boot-ok', window.__AW_RUNNING); }catch(e){}

@@ -1,6 +1,6 @@
 # Atemwetter
 
-Luftqualität, Pollen, Atemübungen und Tageshinweise für COPD und Allergie – für Orte in Österreich und dem Rheintal.
+Luftqualität, Pollen, Atemübungen und Tageshinweise für COPD, Asthma und Allergie – für Orte in Österreich und dem Rheintal.
 Ein Service in Partnerschaft mit MAYOKA andersch gsund, Dornbirn.
 
 **Weiterentwickeln:** Dieses Repository in Claude Code öffnen (claude.ai/code → Repository „atemwetter“ wählen)
