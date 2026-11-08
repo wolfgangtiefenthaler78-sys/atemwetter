@@ -1,4 +1,8 @@
 {
+  "shell": 2,
   "minShell": 1,
-  "storeUrl": ""
+  "storeUrl": "",
+  "iosStoreUrl": "",
+  "apkUrl": "https://github.com/wolfgangtiefenthaler78-sys/atemwetter/releases/latest/download/atemwetter.apk",
+  "_hinweis": "shell = nativer Stand der aktuellen App (bei neuen Erweiterungen/Berechtigungen um 1 erhöhen; ältere Apps bieten dann ein Update an). minShell nur erhöhen, wenn ältere Apps neue Programmversionen gar nicht mehr laden dürfen."
 }

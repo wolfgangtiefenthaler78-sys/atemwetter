@@ -616,7 +616,7 @@ function renderDailyTip(){
 function dtipHelp(){
   const pf = notePlatform(), h = $('dtip-on-help');
   h.textContent = '';
-  if(pf === 'native-old'){ h.append('Für Mitteilungen bitte die neue Version der Android-App installieren: '); const a = document.createElement('a'); a.href = 'https://wolfgangtiefenthaler78-sys.github.io/atemwetter/android.html'; a.textContent = 'Atemwetter für Android'; h.append(a, '. Bis dahin erscheint der Tipp beim ersten Öffnen am Morgen.'); }
+  if(pf === 'native-old'){ h.append('Für Mitteilungen braucht es ein kurzes App-Update (deine Einstellungen bleiben erhalten): '); const a = document.createElement('a'); a.href = 'https://github.com/wolfgangtiefenthaler78-sys/atemwetter/releases/latest/download/atemwetter.apk'; a.textContent = 'Jetzt aktualisieren'; h.append(a, '. Die heruntergeladene Datei antippen und „Aktualisieren“ wählen. Bis dahin erscheint der Tipp beim ersten Öffnen am Morgen.'); }
   else if(pf === 'ios-browser'){ h.append('Am iPhone kommen Mitteilungen, wenn Atemwetter auf dem Home-Bildschirm liegt: '); const a = document.createElement('a'); a.href = 'https://wolfgangtiefenthaler78-sys.github.io/atemwetter/iphone.html'; a.textContent = 'So geht’s'; h.append(a, '. Bis dahin erscheint der Tipp beim ersten Öffnen am Morgen.'); }
   else if(pf === 'none') h.textContent = 'Dieser Browser kann keine Mitteilungen anzeigen. Der Tipp erscheint dann beim ersten Öffnen am Morgen.';
   else h.textContent = 'Der Tagestipp erscheint am Morgen auf deinem Handy oder PC, auch wenn Atemwetter geschlossen ist. Jederzeit wieder abschaltbar.';

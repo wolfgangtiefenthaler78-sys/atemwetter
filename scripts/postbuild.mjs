@@ -8,7 +8,7 @@ const html = readFileSync('dist-single/index.html', 'utf8');
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
 const meta = JSON.parse(readFileSync('data/app-meta.json', 'utf8'));
 copyFileSync('dist-single/index.html', 'dist/app.html');
-writeFileSync('dist/version.json', JSON.stringify({ version, minShell: meta.minShell, storeUrl: meta.storeUrl, built: new Date().toISOString() }, null, 2));
+writeFileSync('dist/version.json', JSON.stringify({ version, shell: meta.shell || meta.minShell, minShell: meta.minShell, storeUrl: meta.storeUrl, iosStoreUrl: meta.iosStoreUrl || '', apkUrl: meta.apkUrl || '', built: new Date().toISOString() }, null, 2));
 console.log('app.html + version.json', version);
 
 // Service Worker für die Morgen-Mitteilung im Browser (nutzt dieselbe Tipp-Logik wie die App)
