@@ -4,7 +4,8 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
-const SHELL = JSON.parse(readFileSync('data/app-meta.json', 'utf8')).minShell; // nativer Stand dieser APK
+const META = JSON.parse(readFileSync('data/app-meta.json', 'utf8'));
+const SHELL = META.shell || META.minShell; // nativer Stand dieser App (Android und iPhone)
 const html = readFileSync('dist-single/index.html', 'utf8');
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
 const b64 = Buffer.from(html, 'utf8').toString('base64');

@@ -56,7 +56,9 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
   prüfen (Playwright-Screenshot). Kein horizontales Scrollen am Handy.
 - Push auf `main` veröffentlicht die Web-App automatisch (GitHub Pages). Die Android-App lädt neue Programmversionen
   selbst (`version.json` + `app.html`) – außer bei Änderungen am nativen Teil (Plugins, Berechtigungen, Symbol):
-  dann `minShell` in `data/app-meta.json` erhöhen – oder die neue Funktion so bauen, dass ältere Apps ohne die Erweiterung
+  dann `shell` in `data/app-meta.json` um 1 erhöhen und neue App bauen (Workflow `android-release.yml` bzw. `ios.yml`): ältere Apps zeigen
+  „Jetzt aktualisieren“ und installieren die neue Version **über** die alte (keine Neuinstallation, Einstellungen bleiben). `minShell` nur erhöhen,
+  wenn ältere Apps neue Programmversionen gar nicht mehr laden dürfen – oder die neue Funktion so bauen, dass ältere Apps ohne die Erweiterung
   verständlich darauf hinweisen (so bei den Mitteilungen: `notify.js` → „native-old“) – und eine neue APK/AAB bauen (Play-Store-Update) bzw. eine neue iPhone-Version hochladen.
 - Für größere Änderungen einen Branch und Pull Request anlegen und Wolfgang die Vorschau beschreiben.
 - **Immer alle Anwendungen nachziehen** (Wunsch von Wolfgang): Nach jeder Veröffentlichung auf `main`

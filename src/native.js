@@ -63,16 +63,26 @@ export function initNative(){
     try {
       const base = SITE_URL.replace(/\/?$/, '/');
       const v = await (await fetch(base + 'version.json?t=' + Date.now())).json();
+      const ios = C.getPlatform && C.getPlatform() === 'ios';
+      const appUpdate = () => {   // neue App-Version über die bestehende installieren – Einstellungen bleiben erhalten
+        const url = ios ? v.iosStoreUrl : (v.storeUrl || v.apkUrl);
+        if(url) location.href = url;   // öffnet Play Store bzw. lädt die App-Datei im Browser; Android bietet dann „Aktualisieren“ an
+      };
       if(v.minShell && v.minShell > SHELL){
-        bar('Für alle Neuerungen bitte die App im Play Store aktualisieren.', v.storeUrl ? ['Zum Play Store', () => { location.href = v.storeUrl; }] : null);
+        bar('Für alle Neuerungen bitte die App aktualisieren. Deine Einstellungen bleiben erhalten.', (ios ? v.iosStoreUrl : (v.storeUrl || v.apkUrl)) ? ['Jetzt aktualisieren', appUpdate] : null);
         return;
+      }
+      let shellBar = false;
+      if(v.shell && v.shell > SHELL && raw.get('aw-shell-ask') !== new Date().toLocaleDateString('sv-SE') && (ios ? v.iosStoreUrl : (v.storeUrl || v.apkUrl))){
+        raw.set('aw-shell-ask', new Date().toLocaleDateString('sv-SE')); shellBar = true;
+        bar('Neue App-Version mit Morgen-Mitteilungen verfügbar. Das Update dauert eine Minute, deine Einstellungen bleiben erhalten.', ['Jetzt aktualisieren', appUpdate]);
       }
       const running = window.__AW_RUNNING;
       if(!v.version || v.version === running || v.version === raw.get('aw-bundle-v') || v.version === raw.get('aw-bundle-bad')) return;
       const html = await (await fetch(base + 'app.html?v=' + v.version)).text();
       if(html.indexOf('<title>Atemwetter') < 0 || html.indexOf('aw-root') < 0) throw new Error('ungültig');
       raw.set('aw-bundle', html); raw.set('aw-bundle-v', v.version); raw.set('aw-bundle-base', window.__AW_BUILTIN || '');
-      bar('Eine neue Version von Atemwetter ist bereit.', ['Jetzt neu laden', () => location.reload()]);
+      if(!shellBar) bar('Eine neue Version von Atemwetter ist bereit.', ['Jetzt neu laden', () => location.reload()]);   // sonst beim nächsten Start
     } catch(e){ console.warn('Update-Prüfung nicht möglich', e); }
   }
 
