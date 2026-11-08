@@ -22,10 +22,10 @@
     <div class="brand"><b>Atemwetter</b><button class="place-btn" id="place-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort ändern"><svg class="pin" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg><span id="place-label">Dornbirn</span><span class="change">ändern</span></button></div>
     <nav class="tabs" role="tablist" aria-label="Ansicht">
       <button id="tab-heute" role="tab" aria-selected="true" data-view="heute">Heute</button>
+      <button id="tab-allergie" role="tab" aria-selected="false" data-view="allergie">Allergie</button>
       <button id="tab-atmen" role="tab" aria-selected="false" data-view="atmen">Atmen</button>
       <button id="tab-copd" role="tab" aria-selected="false" data-view="copd">COPD</button>
       <button id="tab-asthma" role="tab" aria-selected="false" data-view="asthma">Asthma</button>
-      <button id="tab-allergie" role="tab" aria-selected="false" data-view="allergie">Allergie</button>
     </nav>
     <button class="btn ghost small" id="open-dash" hidden>Verwalten</button>
   </header>
@@ -219,7 +219,8 @@
     <section class="block" aria-labelledby="h-al-mine">
       <h2 id="h-al-mine">Meine Allergien</h2>
       <p class="muted" style="font-size:.92rem">Tippe an, worauf du reagierst. Die Auswahl bleibt nur auf deinem Gerät gespeichert.</p>
-      <div class="chips" id="al-chips" role="group" aria-label="Pollenarten wählen"></div>
+      <div class="al-groups" id="al-chips" role="group" aria-label="Pollenarten und Sporen wählen"></div>
+      <p class="muted" style="font-size:.85rem"><span class="mk-dot" aria-hidden="true"></span> Mit Punkt markiert: tagesgenaue Prognose von Copernicus für deinen Ort. Für alle anderen Arten zeigt Atemwetter den Blühkalender.</p>
     </section>
 
     <section class="block" id="al-days-sec" aria-labelledby="h-al-days">
@@ -240,8 +241,9 @@
         <div class="s-pick-head"><label for="al-month">Monat</label><output id="al-month-out" for="al-month" aria-live="polite"></output><button class="btn ghost small" id="al-month-now" type="button" hidden>Zurück zu heute</button></div>
         <input type="range" id="al-month" min="0" max="11" step="1" value="0" aria-describedby="h-al-season">
       </div>
+      <div class="s-filter" id="al-sfilter" role="group" aria-label="Anzeige" hidden><button class="chip" type="button" data-f="mine" aria-pressed="true">Meine Auswahl</button><button class="chip" type="button" data-f="all" aria-pressed="false">Alle Arten</button></div>
       <div class="season" id="al-season"></div>
-      <p class="muted" style="font-size:.85rem">Typische Blütezeiten in Mitteleuropa. Je nach Witterung und Höhenlage beginnt die Saison früher oder später. Hasel und Esche sind wichtige Frühblüher, in der Copernicus-Prognose aber nicht enthalten.</p>
+      <p class="muted" style="font-size:.85rem">Typische Blütezeiten in Mitteleuropa. Je nach Witterung und Höhenlage beginnt die Saison früher oder später. Antippen zeigt Hauptblüte und Allergiepotenzial. Das Allergiepotenzial ist eine grobe Orientierung; wie stark jemand reagiert, ist sehr unterschiedlich.</p>
     </section>
 
     <section class="block" aria-labelledby="h-al-tips">
