@@ -1,0 +1,85 @@
+name: iPhone-Test-App
+
+# 1) Prüfbau für den iPhone-Simulator – läuft ohne Apple-Konto bei jeder Änderung an ios/.
+# 2) Test-App über TestFlight: nur per Hand (Actions › iPhone-Test-App › Run workflow) und nur,
+#    wenn diese Secrets hinterlegt sind (GitHub › Settings › Secrets and variables › Actions):
+#      APPLE_TEAM_ID        Team-ID aus developer.apple.com › Membership
+#      APPSTORE_KEY_ID      Schlüssel-ID eines App-Store-Connect-API-Schlüssels (Rolle „App Manager“)
+#      APPSTORE_ISSUER_ID   Issuer-ID von derselben Seite (Users and Access › Integrations)
+#      APPSTORE_KEY_P8      Inhalt der heruntergeladenen Datei AuthKey_XXXX.p8
+#    Vorher in App Store Connect die App mit der Bundle-ID at.mayoka.atemwetter anlegen.
+on:
+  workflow_dispatch:
+  push:
+    paths: ['ios/**', '.github/workflows/ios.yml', 'capacitor.config.json']
+
+jobs:
+  ios:
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: bash   # mit pipefail: Fehler von xcodebuild werden trotz „| tail“ erkannt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Web-App bauen und in die iPhone-App kopieren
+        run: |
+          npm run build
+          node scripts/build-android.mjs
+          npx cap sync ios
+      - name: Prüfbau für den Simulator
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -n 40
+          test -d build/Build/Products/Debug-iphonesimulator/App.app
+          cd build/Build/Products/Debug-iphonesimulator && zip -qr "$GITHUB_WORKSPACE/Atemwetter-Simulator.zip" App.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Atemwetter-iPhone-Simulator
+          path: Atemwetter-Simulator.zip
+
+      - name: Apple-Zugang prüfen
+        id: apple
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISS: ${{ secrets.APPSTORE_ISSUER_ID }}
+          P8: ${{ secrets.APPSTORE_KEY_P8 }}
+        run: |
+          if [ -z "$TEAM" ] || [ -z "$KID" ] || [ -z "$ISS" ] || [ -z "$P8" ]; then
+            echo "::warning::Kein Apple-Zugang hinterlegt – nur der Simulator-Prüfbau wurde erstellt. Für TestFlight die Secrets APPLE_TEAM_ID, APPSTORE_KEY_ID, APPSTORE_ISSUER_ID und APPSTORE_KEY_P8 anlegen."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/keys" && printf '%s\n' "$P8" > "$RUNNER_TEMP/keys/AuthKey_$KID.p8"
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Für TestFlight bauen und hochladen
+        if: steps.apple.outputs.ok == 'true'
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISS: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/keys/AuthKey_$KID.p8 -authenticationKeyID $KID -authenticationKeyIssuerID $ISS"
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/App.xcarchive $AUTH \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=${{ github.run_number }} archive | tail -n 40
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/App.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH
+          echo "Hochgeladen. Nach der Verarbeitung durch Apple (10–30 Minuten) erscheint die Version in TestFlight."

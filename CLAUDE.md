@@ -21,9 +21,10 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma,
 | Öffentliche Verbindungsdaten | `src/config.js` (nur URL + anon-Schlüssel) |
 | Datenbank-Schema und Zugriffsregeln | `supabase/migrations/*.sql`, Startdaten `supabase/seed.sql` |
 | Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py` |
-| Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-Test-APK, `android-release.yml` = unterschriebene App als GitHub-Release) |
+| Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-Test-APK, `ios.yml` = iPhone-Prüfbau und TestFlight, `android-release.yml` = unterschriebene App als GitHub-Release) |
 | Download-Seite Android | `public/android.html` (fester Link `releases/latest/download/atemwetter.apk`) |
 | Android (Capacitor 7, `at.mayoka.atemwetter`) | `android/`, Lader `scripts/build-android.mjs` |
+| iPhone (Capacitor 7, Swift Package Manager, gleiche ID) | `ios/`, `npm run ios`; Bau und TestFlight-Upload über `.github/workflows/ios.yml` (macOS bei GitHub, kein eigener Mac nötig) |
 
 ## Datenbank (Supabase, Region Frankfurt)
 - `places` – Orte (Standardort `dornbirn`). Neue Orte als Zeile einfügen, nicht im Code.
@@ -36,7 +37,8 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma,
   Jede neue Tabelle bekommt RLS mit Regeln. Nach Änderungen die Advisors (Sicherheit, Performance) prüfen.
 
 ## Geheimnisse – nie in Code, Commits oder Antworten
-- `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus), `ANDROID_KEYSTORE_B64`/`ANDROID_KEYSTORE_PASSWORD` (App-Signatur, Sicherung bei Wolfgang): nur als GitHub-Secrets.
+- `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus), `ANDROID_KEYSTORE_B64`/`ANDROID_KEYSTORE_PASSWORD` (App-Signatur, Sicherung bei Wolfgang),
+  `APPLE_TEAM_ID`, `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_KEY_P8` (iPhone/TestFlight): nur als GitHub-Secrets.
 - Im Code steht ausschließlich der öffentliche anon-Schlüssel in `src/config.js`.
 
 ## Arbeiten
@@ -46,7 +48,7 @@ Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma,
   prüfen (Playwright-Screenshot). Kein horizontales Scrollen am Handy.
 - Push auf `main` veröffentlicht die Web-App automatisch (GitHub Pages). Die Android-App lädt neue Programmversionen
   selbst (`version.json` + `app.html`) – außer bei Änderungen am nativen Teil (Plugins, Berechtigungen, Symbol):
-  dann `minShell` in `data/app-meta.json` erhöhen und eine neue APK/AAB bauen (Play-Store-Update).
+  dann `minShell` in `data/app-meta.json` erhöhen und eine neue APK/AAB bauen (Play-Store-Update) bzw. eine neue iPhone-Version hochladen.
 - Für größere Änderungen einen Branch und Pull Request anlegen und Wolfgang die Vorschau beschreiben.
 
 ## Gestaltung
