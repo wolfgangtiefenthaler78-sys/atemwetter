@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de-AT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atemwetter fürs iPhone</title>
+<meta name="description" content="Atemwetter kostenlos aufs iPhone: Luftqualität, Pollen und Atemübungen für Österreich, Deutschland, die Schweiz und Liechtenstein.">
+<link rel="icon" href="./icon.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<style>
+:root{--bg:#eef2f1;--surface:#f8faf9;--ink:#17262b;--muted:#56676c;--line:#cfd9d8;--accent:#2f5d8a;--accent-ink:#fff;--accent-soft:#dfe8f1;--warn:#8a5a00;--warn-soft:#fbf1dc}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn:#f0c46a;--warn-soft:#2c2617;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a1d;--surface:#16252a;--ink:#e3ecec;--muted:#93a6aa;--line:#2a3d43;--accent:#8fb4dd;--accent-ink:#0f1a1d;--accent-soft:#1d3346;--warn:#f0c46a;--warn-soft:#2c2617;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:17px;line-height:1.55}
+main{max-width:640px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:24px}
+h1,h2{font-family:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(2rem,8vw,2.8rem);letter-spacing:-.02em}
+h2{font-size:1.35rem}
+p{margin:0}
+a{color:var(--accent)}
+.head{display:flex;align-items:center;gap:14px}
+.head img{width:64px;height:64px;border-radius:16px;flex:none}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lede{font-size:1.1rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:16px 26px;font-weight:700;font-size:1.1rem;text-decoration:none;align-self:flex-start}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px}
+.note{background:var(--warn-soft);border-color:transparent}
+.qr{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.qr img{width:150px;height:150px;background:#fff;padding:8px;border-radius:10px}
+.muted{color:var(--muted)}
+small{font-size:.85rem}
+.share{display:inline-block;vertical-align:-3px;width:18px;height:18px}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:12px 22px;font-size:1rem}
+</style>
+</head>
+<body>
+<main>
+  <div class="head"><img src="./icon.png" alt="" width="64" height="64"><div><div class="eyebrow">Kostenlos · ohne Anmeldung</div><h1>Atemwetter fürs iPhone</h1></div></div>
+  <p class="lede">Luftqualität, Pollen, Luftaustausch und geführte Atemübungen für deinen Ort in Österreich, Deutschland, der Schweiz und Liechtenstein. Am iPhone legst du Atemwetter mit wenigen Fingertipps auf den Home-Bildschirm, ohne App Store.</p>
+
+  <a class="btn" href="./">Atemwetter öffnen</a>
+
+  <section class="card">
+    <h2>So kommt Atemwetter auf den Home-Bildschirm</h2>
+    <ol>
+      <li>Diese Seite <b>am iPhone in Safari</b> öffnen und auf <b>„Atemwetter öffnen“</b> tippen.</li>
+      <li>Unten in der Leiste auf das <b>Teilen-Symbol</b> <svg class="share" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M8 7l4-4 4 4M7 11H5v10h14V11h-2"/></svg> tippen (Quadrat mit Pfeil nach oben). Am iPad ist es oben rechts.</li>
+      <li>In der Liste etwas nach unten wischen und <b>„Zum Home-Bildschirm“</b> wählen.</li>
+      <li>Oben rechts auf <b>„Hinzufügen“</b> tippen.</li>
+    </ol>
+    <p>Fertig: Atemwetter liegt jetzt mit eigenem Symbol auf dem Home-Bildschirm und öffnet sich bildschirmfüllend wie eine App.</p>
+    <p class="muted"><small>In Chrome oder anderen Browsern geht es ab iOS 16.4 ebenfalls über das Teilen-Symbol. Fehlt „Zum Home-Bildschirm“, ganz unten auf „Aktionen bearbeiten“ tippen und es hinzufügen.</small></p>
+  </section>
+
+  <section class="card note">
+    <h2>Standort verwenden</h2>
+    <p>Möchtest du die Werte für deinen genauen Standort, tippe in Atemwetter oben auf den Ort und setze das Häkchen. Das iPhone fragt dann einmal nach; wähle <b>„Erlauben“</b>.</p>
+    <p class="muted"><small>Hast du versehentlich abgelehnt: Einstellungen › Datenschutz &amp; Sicherheit › Ortungsdienste › Safari-Websites › „Beim Verwenden der App“.</small></p>
+  </section>
+
+  <section class="card">
+    <h2>Gut zu wissen</h2>
+    <p>Atemwetter braucht kein Konto und sammelt keine persönlichen Daten. Den Standort nutzt die App nur, wenn du das ausdrücklich einschaltest; er bleibt auf deinem iPhone. Neue Inhalte und Verbesserungen kommen automatisch. Details in der <a href="./datenschutz.html">Datenschutzerklärung</a>.</p>
+    <div class="qr"><img src="./iphone-qr.svg" alt="QR-Code zu dieser Seite" width="150" height="150"><p class="muted"><small>Am Computer? QR-Code mit der iPhone-Kamera scannen, um diese Seite dort zu öffnen.</small></p></div>
+    <p class="muted"><small>Android-Handy? Dafür gibt es eine eigene App: <a href="./android.html">Atemwetter für Android</a>.</small></p>
+  </section>
+
+  <p class="muted"><small>Daten: GeoSphere Austria (CC BY 4.0); enthält veränderte Informationen des Copernicus Atmosphere Monitoring Service 2026. Atemwetter wird betrieben von MAYOKA andersch gsund OG, Dornbirn.</small></p>
+  <p><small><a href="./impressum.html">Impressum</a> · <a href="./datenschutz.html">Datenschutz</a></small></p>
+</main>
+</body>
+</html>
