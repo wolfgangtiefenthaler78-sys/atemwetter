@@ -67,6 +67,11 @@ def splash(w, h):
 
 if __name__ == "__main__":
     square_icon(512).save("public/icon.png", optimize=True)
+    # Web-App am Home-Bildschirm (iPhone: apple-touch-icon ohne Transparenz; Android/Chrome: Manifest-Symbole)
+    square_icon(180, 0.92).convert("RGB").save("public/apple-touch-icon.png", optimize=True)
+    square_icon(192, 0.92).convert("RGB").save("public/icon-192.png", optimize=True)
+    square_icon(512, 0.92).convert("RGB").save("public/icon-512.png", optimize=True)
+    square_icon(512, 0.70).convert("RGB").save("public/icon-maskable-512.png", optimize=True)
     dens = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
     for d, f in dens.items():
         base = f"{RES}/mipmap-{d}"

@@ -649,6 +649,10 @@ async function initGeo(){
 }
 
 renderToday(); renderContent(); renderEx(); renderCopd(); renderAsthma(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
+// In den installierten Apps und am Home-Bildschirm die Hinweise „Fürs iPhone“ / „Android-App“ ausblenden
+{ const C = window.Capacitor, native = !!(C && C.isNativePlatform && C.isNativePlatform());
+  const home = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if(native || home){ $('foot-iphone').hidden = true; $('foot-android').hidden = true; } }
 initGeo();
 initAdmin();
 try{ if(window.__AW_RUNNING) localStorage.setItem('aw-boot-ok', window.__AW_RUNNING); }catch(e){}
