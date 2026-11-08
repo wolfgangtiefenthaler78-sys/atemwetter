@@ -114,12 +114,19 @@ const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name
 function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
 let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>POLLEN_NAMES[k]);
 function renderSeason(nowMonth){
-  // Saisonkalender
+  // Saisonkalender als einfache Liste: Zeitraum, Status und ein Jahresbalken, der sich der Breite anpasst
   const SEASON = [['Hasel',[0,1,2]],['Erle',[0,1,2,3]],['Esche',[2,3]],['Birke',[2,3,4]],['Gräser',[4,5,6,7]],['Beifuß',[6,7,8]],['Ambrosia',[7,8,9]]];
-  const MON = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
   const nowM = nowMonth;
-  $('al-season').innerHTML = '<span></span>'+MON.map((x,i)=>'<span class="m'+(i===nowM?' now':'')+'">'+x+'</span>').join('') +
-    SEASON.map(([n,ms,note])=>'<span class="nm"><b>'+n+'</b>'+(note?'<br><small>'+note+'</small>':'')+'</span>'+MON.map((x,i)=>'<span class="cell'+(ms.includes(i)?' on':'')+(i===nowM?' now':'')+'"></span>').join('')).join('');
+  $('al-season').innerHTML = SEASON.map(([n,ms])=>{
+    const a = ms[0], e = ms[ms.length-1], on = ms.includes(nowM);
+    const nextIn = (a - nowM + 12) % 12;
+    const st = on ? ['fliegt jetzt','on'] : nextIn > 0 && nextIn <= 2 ? ['ab '+MN[a],'soon'] : ['ruht','off'];
+    const bar = MS.map((x,i)=>'<span class="cell'+(ms.includes(i)?' on':'')+(i===nowM?' now':'')+'"></span>').join('');
+    return '<div class="s-row'+(on?' active':'')+'"><div class="s-head"><b>'+n+'</b><span class="s-per">'+MS[a]+' – '+MS[e]+'</span><span class="s-st '+st[1]+'">'+st[0]+'</span></div>'+
+      '<div class="s-bar" aria-hidden="true">'+bar+'</div></div>';
+  }).join('') + '<div class="s-axis" aria-hidden="true">'+MS.map((x,i)=>'<span'+(i===nowM?' class="now"':'')+'>'+x[0]+'</span>').join('')+'</div>';
 }
 function renderAllergy(){
   const days = curDays(); if(!days.length) return;
