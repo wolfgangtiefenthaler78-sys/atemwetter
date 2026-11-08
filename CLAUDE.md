@@ -7,7 +7,7 @@ Erkläre Änderungen in Alltagssprache, ohne Fachjargon, und sag am Ende, was er
 Kostenlose Atem- und Luftqualitäts-App für Österreich, Deutschland, die Schweiz und Liechtenstein (Schwerpunkt Rheintal) unter neutralem Namen, MAYOKA als Partner.
 Ziel: Reichweite für MAYOKA über Ärzte, Selbsthilfegruppen, Kneippvereine und Unternehmen.
 Ansichten: Heute (Luftqualitätsindex, Schadstoffe vs. WHO 2021, Luftaustausch, Pollen, Tagesverlauf, Tipp der Woche,
-Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Allergie. Dashboard „Verwaltung“ für Admins.
+Partner-Box), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma, Allergie. Dashboard „Verwaltung“ für Admins.
 
 ## Aufbau
 | Teil | Ort |
@@ -59,7 +59,7 @@ das Logo erscheint nur, wenn der Partnername „MAYOKA“ enthält.
 - Begriffe: „Longevity“ als Leitbegriff, dazu Wellness, Gesundheit, Auszeit. Longevity als Thema, nie als Versprechen.
 - Sauerstoff-Sole-Inhalationsraum immer als Ergänzung, nie als Therapie oder Heilversprechen.
 - Partner-Hinweise: dezent, auf allen Seiten, als „Partner-Angebot“ gekennzeichnet, pro Tag ausblendbar;
-  bei COPD und Allergie erst unter den medizinischen Inhalten mit Hinweis „kein Ersatz für ärztliche Behandlung“.
+  bei COPD, Asthma und Allergie erst unter den medizinischen Inhalten mit Hinweis „kein Ersatz für ärztliche Behandlung“.
 - Medizinische Texte: PubMed-Quellen mit DOI-Link, Evidenzstufe nennen (RCT, Metaanalyse, Beobachtungsstudie …),
   Nullbefunde erwähnen, Herstellerangaben von unabhängigen Belegen trennen, aktuellen Forschungsstand prüfen.
 - Standort nur nach ausdrücklicher Freischaltung per Häkchen; bleibt auf dem Gerät.
