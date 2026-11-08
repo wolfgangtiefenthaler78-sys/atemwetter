@@ -2,6 +2,16 @@
   "appId": "at.mayoka.atemwetter",
   "appName": "Atemwetter",
   "webDir": "www",
-  "android": { "adjustMarginsForEdgeToEdge": "auto" },
-  "plugins": { "CapacitorHttp": { "enabled": true } }
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_atemwetter",
+      "iconColor": "#2f5d8a"
+    }
+  }
 }

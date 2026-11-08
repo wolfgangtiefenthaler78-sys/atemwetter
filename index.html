@@ -17,6 +17,12 @@
 <body>
 <div id="aw-root">
 <p class="load-error" id="load-error" hidden>Die Daten können gerade nicht geladen werden. Bitte später erneut öffnen.</p>
+<div class="dtip-pop" id="dtip-pop" role="dialog" aria-labelledby="dtip-pop-title" hidden>
+  <div class="eyebrow">Dein Tagestipp</div>
+  <h3 id="dtip-pop-title"></h3>
+  <p id="dtip-pop-text"></p>
+  <div class="cta-row"><button class="btn small" id="dtip-pop-ok" type="button">Danke</button><button class="linkish" id="dtip-pop-off" type="button">Nicht mehr anzeigen</button></div>
+</div>
 <div class="wrap" id="app">
   <header class="top">
     <div class="brand"><b>Atemwetter</b><button class="place-btn" id="place-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort ändern"><svg class="pin" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg><span id="place-label">Dornbirn</span><span class="change">ändern</span></button></div>
@@ -50,6 +56,29 @@
       <div class="scale" aria-hidden="true"><div class="bar" id="scale-bar"></div><div class="marker" id="scale-marker"></div><div class="labels"><span>gut</span><span></span><span>mäßig</span><span></span><span>schlecht</span><span></span></div></div>
     </section>
 
+    <section class="dtip" id="dtip" aria-labelledby="dtip-title">
+      <div class="dtip-top"><div class="eyebrow" id="dtip-eyebrow">Dein Tagestipp</div><button class="linkish" id="dtip-set-btn" type="button" aria-expanded="false" aria-controls="dtip-set">Einstellungen</button></div>
+      <h3 id="dtip-title"></h3>
+      <p id="dtip-text"></p>
+      <div><button class="btn ghost small" id="dtip-ex" type="button"></button></div>
+      <div class="dtip-set" id="dtip-set" hidden>
+        <div class="dtip-sub">
+          <div class="eyebrow">Was betrifft dich?</div>
+          <div class="chips" id="dtip-prof" role="group" aria-label="Was betrifft dich?">
+            <button class="chip" type="button" data-p="allergy" aria-pressed="false">Allergie</button>
+            <button class="chip" type="button" data-p="asthma" aria-pressed="false">Asthma</button>
+            <button class="chip" type="button" data-p="copd" aria-pressed="false">COPD</button>
+          </div>
+          <p class="muted" style="font-size:.85rem;margin:0">Deine Pollenarten wählst du im <button class="linkish" id="dtip-to-al" type="button">Allergie-Check</button>. Diese Angaben bleiben nur auf deinem Gerät.</p>
+        </div>
+        <label class="check" for="dtip-on"><input type="checkbox" id="dtip-on"><span><b>Jeden Morgen als Mitteilung</b><br><small class="muted" id="dtip-on-help">Der Tagestipp erscheint am Morgen auf deinem Handy oder PC. Jederzeit wieder abschaltbar.</small></span></label>
+        <label class="f dtip-hour" for="dtip-hour">Uhrzeit
+          <select id="dtip-hour"><option value="6">6:00 Uhr</option><option value="7">7:00 Uhr</option><option value="8">8:00 Uhr</option><option value="9">9:00 Uhr</option><option value="10">10:00 Uhr</option></select>
+        </label>
+        <p class="status" id="dtip-status" aria-live="polite"></p>
+      </div>
+    </section>
+
     <div class="cols">
     <div class="col">
     <section class="block" aria-labelledby="h-stoffe">
@@ -80,7 +109,7 @@
     </section>
 
     <section class="tip" aria-labelledby="tip-title">
-      <div class="eyebrow">Tipp der Woche</div>
+      <div class="eyebrow" id="tip-eyebrow">Tipp der Woche</div>
       <h3 id="tip-title"></h3>
       <p id="tip-text" style="white-space:pre-line"></p>
     </section>
@@ -226,7 +255,7 @@
     <section class="block" id="al-days-sec" aria-labelledby="h-al-days">
       <h2 id="h-al-days">Die nächsten drei Tage</h2>
       <div class="tablebox"><table class="codes al-table" id="al-table"></table></div>
-      <p class="muted" style="font-size:.85rem">Tageshöchstwerte in Pollenkörnern pro m³ Luft, Modellwerte. Die Einteilung gering, mäßig, hoch ist grob und je Pollenart verschieden, weil schon wenige Ambrosia- oder Beifußpollen Beschwerden auslösen können.</p>
+      <p class="muted" style="font-size:.85rem">Arten mit Punkt: Tageshöchstwerte in Pollenkörnern pro m³ Luft, Modellwerte von Copernicus. Arten mit „Kalender“: typische Blühzeit, keine Messung. Die Einteilung gering, mäßig, hoch ist grob und je Pollenart verschieden, weil schon wenige Ambrosia- oder Beifußpollen Beschwerden auslösen können.</p>
     </section>
 
     <section class="note" id="al-times" aria-labelledby="h-al-times">
@@ -294,6 +323,7 @@
     <div id="d-admin" class="dash-admin" hidden>
 
     <fieldset><legend>Tipp der Woche</legend>
+      <label class="check" for="d-tip-auto"><input type="checkbox" id="d-tip-auto"><span><b>Automatisch aus den Daten erstellen</b><br><small class="muted">Die App wählt jede Woche selbst einen passenden Tipp (Luftlage, Pollen-Hauptblüte, Kälte, Ozon oder ein allgemeiner Atem- und Alltagstipp), je Ort. Überschrift und Text unten werden dann nicht angezeigt.</small></span></label>
       <label class="f">Überschrift<input id="d-tip-title" maxlength="90"></label>
       <label class="f">Text<textarea id="d-tip-text" maxlength="600"></textarea></label>
       <div class="controls" style="justify-content:flex-start"><span class="status" id="d-suggest-status"></span></div>

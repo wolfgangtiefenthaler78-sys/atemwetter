@@ -7,7 +7,7 @@ Erkläre Änderungen in Alltagssprache, ohne Fachjargon, und sag am Ende, was er
 Kostenlose Atem- und Luftqualitäts-App für Österreich, Deutschland, die Schweiz und Liechtenstein (Schwerpunkt Rheintal) unter neutralem Namen, MAYOKA als Partner.
 Ziel: Reichweite für MAYOKA über Ärzte, Selbsthilfegruppen, Kneippvereine und Unternehmen.
 Ansichten: Heute (Luftqualitätsindex, Schadstoffe vs. WHO 2021, Luftaustausch, Pollen, Tagesverlauf, Tipp der Woche,
-Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Pollen- und Sporenarten), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma. Dashboard „Verwaltung“ für Admins.
+Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Pollen- und Sporenarten), Atmen (vier geführte Übungen mit Evidenz-Etikett), COPD, Asthma. Dashboard „Verwaltung“ für Admins.
 
 ## Aufbau
 | Teil | Ort |
@@ -18,6 +18,10 @@ Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Poll
 | Datenzugriff Supabase, Login, Speichern | `src/data.js` |
 | Live-Daten für den genauen Standort (Web und Android) | `src/live.js` |
 | Android-Zusatz (Standort, Teilen, Selbst-Update) | `src/native.js` |
+| Pollen- und Sporenkatalog (Blühzeiten, Hauptblüte, Allergiepotenzial) | `src/pollen.js` |
+| Tagestipp und automatischer Tipp der Woche (gemeinsame Logik für App und Mitteilungen) | `src/tips.js` |
+| Morgen-Mitteilung: Steuerung je Plattform | `src/notify.js` (App: LocalNotifications; Browser: Web-Push mit `src/sw.js` → `dist/sw.js`) |
+| Versand Web-Push (Schlüsselpaar in `app_secrets`, öffentlicher Teil in `content.push_public_key`) | `scripts/send_push.mjs`, `.github/workflows/push.yml` (morgens alle 30 min) |
 | Öffentliche Verbindungsdaten | `src/config.js` (nur URL + anon-Schlüssel) |
 | Datenbank-Schema und Zugriffsregeln | `supabase/migrations/*.sql`, Startdaten `supabase/seed.sql` |
 | Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py` |
@@ -34,6 +38,9 @@ Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Poll
 - `content` – genau eine Zeile `id='main'`: `tip`, `partner`, `app_link`, `store_url`. Schreibt das Dashboard (Admins).
 - `partner_codes` – Partner-Codes mit Einlösungen, nur Admins. Zählen über `change_code_count()`.
 - `admins` – freigeschaltete Konten (Supabase-Auth-Nutzer-IDs).
+- `push_subscriptions` – Browser-Anmeldungen für die Morgen-Mitteilung (nur Empfangsadresse, Ort, Uhrzeit; keine Gesundheitsangaben).
+  Schreiben nur über `save_push_subscription()` / `delete_push_subscription()`, Versand mit service_role.
+- `app_secrets` – nur service_role (VAPID-Schlüsselpaar). Profil und Allergien bleiben immer auf dem Gerät.
 - Schema nur über **neue** Migrationsdateien ändern (`supabase/migrations/<Zeitstempel>_<name>.sql`), nie alte bearbeiten.
   Jede neue Tabelle bekommt RLS mit Regeln. Nach Änderungen die Advisors (Sicherheit, Performance) prüfen.
 
@@ -49,7 +56,8 @@ Partner-Box), Allergie (Pollen-Check, Auswahl und Blühkalender mit rund 30 Poll
   prüfen (Playwright-Screenshot). Kein horizontales Scrollen am Handy.
 - Push auf `main` veröffentlicht die Web-App automatisch (GitHub Pages). Die Android-App lädt neue Programmversionen
   selbst (`version.json` + `app.html`) – außer bei Änderungen am nativen Teil (Plugins, Berechtigungen, Symbol):
-  dann `minShell` in `data/app-meta.json` erhöhen und eine neue APK/AAB bauen (Play-Store-Update) bzw. eine neue iPhone-Version hochladen.
+  dann `minShell` in `data/app-meta.json` erhöhen – oder die neue Funktion so bauen, dass ältere Apps ohne die Erweiterung
+  verständlich darauf hinweisen (so bei den Mitteilungen: `notify.js` → „native-old“) – und eine neue APK/AAB bauen (Play-Store-Update) bzw. eine neue iPhone-Version hochladen.
 - Für größere Änderungen einen Branch und Pull Request anlegen und Wolfgang die Vorschau beschreiben.
 - **Immer alle Anwendungen nachziehen** (Wunsch von Wolfgang): Nach jeder Veröffentlichung auf `main`
   1. Web: Lauf „Web-App veröffentlichen“ abwarten und online prüfen.

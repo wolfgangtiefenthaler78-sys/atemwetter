@@ -1,5 +1,8 @@
 /* Atemwetter – Oberfläche. Daten und Speichern kommen über `api` (src/data.js). */
 import qrcode from 'qrcode-generator';
+import { POLLEN_NAMES, POLLEN_TH, LEVELS, pollenLevel, SEASON_GROUPS, SEASON, SEASON_BY, POT, MN, MS, phase } from './pollen.js';
+import { dailyTip, weeklyTip, isoWeek } from './tips.js';
+import { createNotifier, loadSettings, saveSettings, platform as notePlatform } from './notify.js';
 export function startApp(D, api){
 const $ = id => document.getElementById(id);
 const STATE = D.state;
@@ -108,54 +111,11 @@ function renderSpark(t){
 }
 
 /* ---------- Pollen / Allergie ---------- */
-const POLLEN_NAMES = {alder:'Erle',birch:'Birke',grass:'Gräser',mugwort:'Beifuß',ragweed:'Ambrosia'};
-const POLLEN_TH = {alder:[10,50], birch:[10,100], grass:[10,50], mugwort:[5,20], ragweed:[3,10]};
-const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name:'mäßig',c:'var(--q3)'},{name:'hoch',c:'var(--q4)'}];
-function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
-// Typische Blühzeiten in Mitteleuropa (0 = Jänner): Monate mit Flug (ms), Hauptblüte (pk), Allergiepotenzial (pot 1–3).
-// k = Schlüssel der tagesgenauen Copernicus-Prognose (nur Erle, Birke, Gräser, Beifuß, Ambrosia).
-const SEASON_GROUPS = ['Laubbäume','Nadelbäume','Gräser und Kräuter','Schimmelpilzsporen'];
-const SEASON = [
-  {id:'hazel',    g:0, n:'Hasel',       pn:'Haselpollen',      ms:[0,1,2],         pk:[1],   pot:2, note:'In milden Wintern oft schon ab Dezember.'},
-  {id:'alder',    g:0, n:'Erle',        pn:'Erlenpollen',      ms:[0,1,2,3],       pk:[1,2], pot:2, k:'alder'},
-  {id:'elm',      g:0, n:'Ulme',        pn:'Ulmenpollen',      ms:[1,2,3],         pk:[2],   pot:1},
-  {id:'poplar',   g:0, n:'Pappel',      pn:'Pappelpollen',     ms:[2,3],           pk:[2],   pot:1, note:'Die weißen Samenflocken im Frühsommer sind keine Pollen und lösen selbst kaum Allergien aus.'},
-  {id:'willow',   g:0, n:'Weide',       pn:'Weidenpollen',     ms:[2,3,4],         pk:[3],   pot:1},
-  {id:'ash',      g:0, n:'Esche',       pn:'Eschenpollen',     ms:[2,3],           pk:[3],   pot:2, note:'Verwandt mit der Olive; wer auf eine reagiert, reagiert oft auch auf die andere.'},
-  {id:'hornbeam', g:0, n:'Hainbuche',   pn:'Hainbuchenpollen', ms:[2,3,4],         pk:[3],   pot:2, note:'Verwandt mit Birke, Erle und Hasel.'},
-  {id:'birch',    g:0, n:'Birke',       pn:'Birkenpollen',     ms:[2,3,4],         pk:[3],   pot:3, k:'birch', note:'Häufig zusammen mit Beschwerden bei rohem Kern- und Steinobst oder Haselnüssen.'},
-  {id:'plane',    g:0, n:'Platane',     pn:'Platanenpollen',   ms:[3,4],           pk:[3],   pot:2, note:'Häufiger Stadtbaum.'},
-  {id:'beech',    g:0, n:'Buche',       pn:'Buchenpollen',     ms:[3,4],           pk:[4],   pot:1},
-  {id:'oak',      g:0, n:'Eiche',       pn:'Eichenpollen',     ms:[3,4,5],         pk:[4],   pot:2},
-  {id:'olive',    g:0, n:'Olive',       pn:'Olivenpollen',     ms:[4,5],           pk:[4],   pot:3, note:'Vor allem im Mittelmeerraum, also im Urlaub wichtig.'},
-  {id:'lime',     g:0, n:'Linde',       pn:'Lindenpollen',     ms:[5,6],           pk:[5],   pot:1},
-  {id:'chestnut', g:0, n:'Edelkastanie',pn:'Kastanienpollen',  ms:[5,6],           pk:[5],   pot:1, note:'Häufig im Tessin und in Südtirol.'},
-  {id:'cypress',  g:1, n:'Zypresse',    pn:'Zypressenpollen',  ms:[0,1,2,3],       pk:[1,2], pot:2, note:'Vor allem im Mittelmeerraum und als Zierbaum; im Süden ein häufiger Auslöser im Spätwinter.'},
-  {id:'juniper',  g:1, n:'Wacholder und Thuja', pn:'Pollen von Wacholder und Thuja', ms:[2,3,4], pk:[3], pot:2, note:'Thuja (Lebensbaum) ist eine häufige Heckenpflanze. Wacholder, Thuja und Zypresse gehören zur selben Familie.'},
-  {id:'larch',    g:1, n:'Lärche',      pn:'Lärchenpollen',    ms:[2,3,4],         pk:[3],   pot:1},
-  {id:'pine',     g:1, n:'Kiefer',      pn:'Kiefernpollen',    ms:[4,5],           pk:[4],   pot:1, note:'Der gelbe Blütenstaub auf Autos und Pfützen („Schwefelregen“) ist auffällig, löst aber selten Allergien aus.'},
-  {id:'spruce',   g:1, n:'Fichte',      pn:'Fichtenpollen',    ms:[4,5],           pk:[4],   pot:1, note:'Viel sichtbarer Blütenstaub, aber selten Auslöser von Allergien.'},
-  {id:'fir',      g:1, n:'Tanne',       pn:'Tannenpollen',     ms:[4,5],           pk:[4],   pot:1, note:'Selten Auslöser von Allergien.'},
-  {id:'grass',    g:2, n:'Gräser',      pn:'Gräserpollen',     ms:[4,5,6,7],       pk:[4,5], pot:3, k:'grass'},
-  {id:'rye',      g:2, n:'Roggen',      pn:'Roggenpollen',     ms:[4,5],           pk:[4],   pot:3, note:'Getreide aus der Familie der Gräser; wer auf Gräser reagiert, reagiert meist auch auf Roggen.'},
-  {id:'plantain', g:2, n:'Wegerich',    pn:'Wegerichpollen',   ms:[4,5,6,7,8],     pk:[5],   pot:2},
-  {id:'sorrel',   g:2, n:'Ampfer',      pn:'Ampferpollen',     ms:[4,5,6],         pk:[5],   pot:1},
-  {id:'nettle',   g:2, n:'Brennnessel', pn:'Brennnesselpollen',ms:[5,6,7,8],       pk:[6,7], pot:1, note:'Das verwandte Glaskraut im Mittelmeerraum ist dagegen ein starker Auslöser.'},
-  {id:'mugwort',  g:2, n:'Beifuß',      pn:'Beifußpollen',     ms:[6,7,8],         pk:[7],   pot:3, k:'mugwort'},
-  {id:'goosefoot',g:2, n:'Gänsefuß',    pn:'Gänsefußpollen',   ms:[6,7,8],         pk:[7],   pot:1},
-  {id:'ragweed',  g:2, n:'Ambrosia',    pn:'Ambrosiapollen',   ms:[7,8,9],         pk:[7,8], pot:3, k:'ragweed', note:'Schon wenige Ambrosiapollen können Beschwerden auslösen.'},
-  {id:'alternaria',g:3,n:'Alternaria',  pn:'Alternaria-Sporen',ms:[4,5,6,7,8,9],   pk:[6,7], pot:3, note:'Schimmelpilzsporen, keine Pollen. Viele Sporen an warmen, trockenen und windigen Tagen und bei der Getreideernte.'},
-  {id:'cladosporium',g:3,n:'Cladosporium',pn:'Cladosporium-Sporen',ms:[4,5,6,7,8,9],pk:[6,7], pot:2, note:'Schimmelpilzsporen, keine Pollen. Im Sommer die häufigsten Sporen in der Luft.'}];
-const SEASON_BY = Object.fromEntries(SEASON.map(P=>[P.id,P]));
-const POT = ['','gering','mittel','hoch'];
 let seasonAll = false;
 let myAllergens = (LS.get('aw-allergens')||'').split(',').filter(k=>SEASON_BY[k]);  // Pollen- und Sporenarten aus dem Katalog
 const myModel = () => myAllergens.filter(k=>POLLEN_NAMES[k]);                     // davon mit Copernicus-Tageswerten
 let seasonSel = null;  // vom Nutzer gewählter Monat (Schieberegler); null = aktueller Monat
 let seasonOpen = null; // aufgeklappte Pollenart
-const MN = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-const MS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-const phase = (P,m) => P.pk.includes(m) ? 2 : P.ms.includes(m) ? 1 : 0;
 function seasonDetail(P, selM, isNow){
   const id = 'sd-'+P.id;
   const ph = phase(P, selM), pkTxt = P.pk.map(m=>MN[m]).join(' und ');
@@ -209,6 +169,18 @@ $('al-season').addEventListener('click', e=>{ const b = e.target.closest('.s-btn
   const nb = document.querySelector('#al-season .s-btn[data-n="'+b.dataset.n+'"]'); if(nb) nb.focus(); });
 $('al-month').addEventListener('input', e=>{ seasonSel = Number(e.target.value); renderSeason(new Date().getMonth()); });
 $('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason(new Date().getMonth()); $('al-month').focus(); });
+// Tabelle „Die nächsten drei Tage“: Arten mit Copernicus-Tageswerten (Modell) und – aus der Auswahl – Arten nach Blühkalender
+function renderPollenTable(days, ti, modelKeys){
+  const calRows = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]).filter(P=>!P.k)
+    : SEASON.filter(P=>!P.k && P.pot>=2 && days.some(d=>P.ms.includes(new Date(d.date+'T12:00:00').getMonth()))));
+  const hasModel = days.some(d=>d.pollen) && modelKeys.length;
+  const CAL = [['ruht','var(--q1)'],['Saison','var(--q3)'],['Hauptblüte','var(--q4)']];
+  const head = '<thead><tr><th>Art</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead>';
+  const mRows = hasModel ? modelKeys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b> <span class="mk-dot" aria-label="Tagesprognose"></span></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('') : '';
+  const cRows = calRows.map(P=>'<tr><td><b>'+P.n+'</b> <small class="muted">Kalender</small></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
+  $('al-table').innerHTML = head+'<tbody>'+mRows+cRows+'</tbody>';
+  $('al-days-sec').hidden = !(mRows || cRows);
+}
 function renderAllergy(){
   const days = curDays(); if(!days.length) return;
   const ti = todayIndex(), t = days[ti];
@@ -231,13 +203,12 @@ function renderAllergy(){
     $('al-lede').textContent = inSeason.length
       ? 'Laut Kalender ist jetzt typischerweise Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tagesgenaue Messwerte bietet der Österreichische Pollenwarndienst.' : '')
       : 'Für ' + (myAllergens.length ? 'deine Auswahl' : 'die wichtigsten Pollenarten') + ' ist laut Kalender gerade keine Saison. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.';
-    $('al-days-sec').hidden = true;
+    renderPollenTable(days, ti, []);
     $('al-times-text').textContent = 'Allgemein gilt: In der Pollenzeit lieber kurz und kräftig lüften, nach einem Regenguss ist die Luft oft für einige Zeit pollenärmer. Für Feinstaub und Luftaustausch siehe die Ansicht „Heute“.';
     renderSeason(nowM);
     renderHint('allergie', 'Zum Abschalten zwischendurch:');
     return;
   }
-  $('al-days-sec').hidden = false;
   const lv = keys.map(k=>({k, v:(t.pollen||{})[k]||0, L:pollenLevel(k,(t.pollen||{})[k])})).sort((a,b)=>b.L.i-a.L.i||b.v-a.v);
   const worst = lv[0].L;
   const V = ['Pollenfreier Tag','Geringe Belastung','Mäßige Belastung','Hohe Belastung'];
@@ -251,9 +222,7 @@ function renderAllergy(){
   $('al-verdict').textContent = V[worst.i]; $('al-dot').style.background = worst.c;
   $('al-pill').textContent = pillTxt;
   $('al-lede').textContent = (LED[worst.i].trim() + calTxt + (offSeason && !calNow.length ? ' Die Pollensaison ruht gerade. In der Heizperiode können eher Hausstaubmilben oder Schimmelsporen in Innenräumen eine Rolle spielen.' : '')).trim();
-  // 3-Tage-Tabelle
-  $('al-table').innerHTML = '<thead><tr><th>Pollenart</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead><tbody>'+
-    keys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('')+'</tbody>';
+  renderPollenTable(days, ti, keys);
   // beste Lüftzeit aus Stundenwerten
   const ph = t.pollen_hourly || {};
   const active = keys.filter(k=>ph[k]);
@@ -270,7 +239,7 @@ function renderAllergy(){
 }
 $('al-chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; const k=b.dataset.k;
   myAllergens = myAllergens.includes(k) ? myAllergens.filter(x=>x!==k) : myAllergens.concat(k);
-  LS.set('aw-allergens', myAllergens.length ? myAllergens.join(',') : null); renderAllergy(); renderAsthma(); });
+  LS.set('aw-allergens', myAllergens.length ? myAllergens.join(',') : null); renderAllergy(); renderAsthma(); renderDailyTip(); refreshNotes(); });
 $('to-allergie').addEventListener('click', ()=>{ location.hash='allergie'; show('allergie'); window.scrollTo(0,0); });
 
 /* ---------- COPD ---------- */
@@ -359,8 +328,18 @@ $('as-to-allergie').addEventListener('click', ()=>{ location.hash='allergie'; sh
 /* ---------- Inhalte ---------- */
 function renderContent(){
   const tip = STATE.tip || {}, p = STATE.partner || {};
-  $('tip-title').textContent = tip.title || '';
-  $('tip-text').textContent = tip.text || '';
+  if(tip.auto || (!tip.title && !tip.text)){
+    // automatisch: je Woche und Ort einmal gewählt und auf dem Gerät gemerkt, damit er die ganze Woche gleich bleibt
+    const wk = isoWeek(), key = 'aw-wtip:' + wk + ':' + placeId;
+    let w = null; try { w = JSON.parse(LS.get(key) || 'null'); } catch(e){}
+    if(!w || !w.title){ w = weeklyTip(curDays(), curPlace().name, wk); LS.set(key, JSON.stringify(w)); }
+    $('tip-eyebrow').textContent = 'Tipp der Woche · automatisch für ' + curPlace().name;
+    $('tip-title').textContent = w.title; $('tip-text').textContent = w.text;
+  } else {
+    $('tip-eyebrow').textContent = 'Tipp der Woche';
+    $('tip-title').textContent = tip.title || '';
+    $('tip-text').textContent = tip.text || '';
+  }
   $('p-name').textContent = p.name ? 'Partner-Angebot · ' + p.name : 'Partner-Angebot';
   $('p-head').textContent = p.headline || '';
   $('p-logo').hidden = !/mayoka/i.test(p.name || '');
@@ -501,6 +480,7 @@ function fillForm(){
   $('d-link').value = STATE.appLink || '';
   $('d-store').value = STATE.storeUrl || '';
   $('d-p-showhints').checked = (STATE.partner||{}).showHints !== false;
+  $('d-tip-auto').checked = !!(STATE.tip||{}).auto;
   renderQR();
   const t = curDays()[todayIndex()];
   $('d-air').textContent = 'Letzte Aktualisierung: ' + new Date(AIR.updated).toLocaleString('de-AT',{dateStyle:'medium',timeStyle:'short'}) + ' · '+PLACES.length+' Orte' + (t?' · '+curPlace().name+' heute Index '+t.aqi_max+' ('+band(t.aqi_max).name+')':'');
@@ -510,6 +490,7 @@ function readForm(){
   STATE.appLink = $('d-link').value.trim();
   STATE.storeUrl = $('d-store').value.trim();
   STATE.partner.showHints = $('d-p-showhints').checked;
+  STATE.tip.auto = $('d-tip-auto').checked;
 }
 function renderQR(){
   const link = $('d-link').value.trim(), box = $('qr');
@@ -608,12 +589,75 @@ function initAdmin(){
 }
 
 /* ---------- Ort wählen und Standort ---------- */
-function renderAll(){ renderToday(); renderCopd(); renderAsthma(); renderAllergy(); }
+/* ---------- Persönlicher Tagestipp und Morgen-Mitteilung ---------- */
+let profile = {}; try { profile = JSON.parse(LS.get('aw-profile') || '{}') || {}; } catch(e){ profile = {}; }
+const tipPrefs = () => ({ profile, allergens: myAllergens.slice() });
+const serverPlaceId = () => {
+  const p = curPlace(); if(p.id !== 'gps') return p.id;
+  if(p.nearId) return p.nearId;
+  let best = null, bd = 1e9; PLACES.forEach(q => { if(q.id === 'gps') return; const d = distKm(p.lat, p.lon, q.lat, q.lon); if(d < bd){ bd = d; best = q; } });
+  return best ? best.id : (AIR.default || 'dornbirn');
+};
+let dtipSet = loadSettings();
+const notifier = createNotifier({ api, pushKey: () => STATE.pushKey || '', place: () => curPlace(), serverPlaceId, days: () => curDays(), prefs: tipPrefs });
+let noteTimer = null;
+const refreshNotes = () => { clearTimeout(noteTimer); noteTimer = setTimeout(() => notifier.refresh(dtipSet), 1200); };
+function currentTip(){ return dailyTip(curDays()[todayIndex()], tipPrefs(), curPlace().name); }
+function renderDailyTip(){
+  if(!curDays().length) return;
+  const t = currentTip();
+  $('dtip').className = 'dtip' + (t.level > 1 ? ' l' + t.level : '');
+  $('dtip-eyebrow').textContent = 'Dein Tagestipp · ' + curPlace().name;
+  $('dtip-title').textContent = t.title; $('dtip-text').textContent = t.text;
+  $('dtip-ex').textContent = 'Übung für heute: ' + t.ex.name; $('dtip-ex').dataset.ex = t.ex.id;
+  $('dtip-prof').querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(!!profile[c.dataset.p])));
+  $('dtip-on').checked = dtipSet.on; $('dtip-hour').value = String(dtipSet.hour);
+}
+function dtipHelp(){
+  const pf = notePlatform(), h = $('dtip-on-help');
+  h.textContent = '';
+  if(pf === 'native-old'){ h.append('Für Mitteilungen bitte die neue Version der Android-App installieren: '); const a = document.createElement('a'); a.href = 'https://wolfgangtiefenthaler78-sys.github.io/atemwetter/android.html'; a.textContent = 'Atemwetter für Android'; h.append(a, '. Bis dahin erscheint der Tipp beim ersten Öffnen am Morgen.'); }
+  else if(pf === 'ios-browser'){ h.append('Am iPhone kommen Mitteilungen, wenn Atemwetter auf dem Home-Bildschirm liegt: '); const a = document.createElement('a'); a.href = 'https://wolfgangtiefenthaler78-sys.github.io/atemwetter/iphone.html'; a.textContent = 'So geht’s'; h.append(a, '. Bis dahin erscheint der Tipp beim ersten Öffnen am Morgen.'); }
+  else if(pf === 'none') h.textContent = 'Dieser Browser kann keine Mitteilungen anzeigen. Der Tipp erscheint dann beim ersten Öffnen am Morgen.';
+  else h.textContent = 'Der Tagestipp erscheint am Morgen auf deinem Handy oder PC, auch wenn Atemwetter geschlossen ist. Jederzeit wieder abschaltbar.';
+}
+$('dtip-set-btn').addEventListener('click', () => { const open = $('dtip-set').hidden; $('dtip-set').hidden = !open; $('dtip-set-btn').setAttribute('aria-expanded', String(open)); if(open) dtipHelp(); });
+$('dtip-prof').addEventListener('click', e => { const c = e.target.closest('.chip'); if(!c) return;
+  profile[c.dataset.p] = !profile[c.dataset.p]; LS.set('aw-profile', JSON.stringify(profile)); renderDailyTip(); refreshNotes(); });
+$('dtip-to-al').addEventListener('click', () => { location.hash = 'allergie'; show('allergie'); window.scrollTo(0, 0); });
+$('dtip-ex').addEventListener('click', () => { const ex = EX.find(e => e.id === $('dtip-ex').dataset.ex); if(ex){ cur = ex; renderEx(); } location.hash = 'atmen'; show('atmen'); window.scrollTo(0, 0); });
+$('dtip-on').addEventListener('change', async () => {
+  const st = $('dtip-status'); st.className = 'status'; st.textContent = 'Einen Moment …';
+  const on = $('dtip-on').checked; $('dtip-on').disabled = true;
+  try {
+    if(on){ dtipSet = { on: true, hour: Number($('dtip-hour').value) }; st.textContent = await notifier.enable(dtipSet); }
+    else { await notifier.disable(); dtipSet = { on: false, hour: Number($('dtip-hour').value) }; st.textContent = 'Ausgeschaltet. Es kommen keine Mitteilungen mehr.'; }
+    saveSettings(dtipSet);
+  } catch(e){
+    $('dtip-on').checked = false; dtipSet.on = false; saveSettings(dtipSet);
+    st.className = 'status err'; st.textContent = (e && e.message) || 'Das hat nicht geklappt. Bitte nochmals versuchen.';
+  } finally { $('dtip-on').disabled = false; }
+});
+$('dtip-hour').addEventListener('change', () => { dtipSet.hour = Number($('dtip-hour').value); saveSettings(dtipSet); if(dtipSet.on){ $('dtip-status').className = 'status'; $('dtip-status').textContent = 'Neue Uhrzeit: ' + dtipSet.hour + ':00 Uhr.'; refreshNotes(); } });
+notifier.onTap(() => { location.hash = 'heute'; show('heute'); window.scrollTo(0, 0); });
+// Einblendung am Morgen, wo keine echte Mitteilung möglich ist (oder nicht erlaubt wurde)
+function maybePopup(){
+  if(!dtipSet.on || notifier.systemReady() || !curDays().length) return;
+  const today = todayKey(), hour = Number(new Date().toLocaleString('en-GB',{timeZone:'Europe/Vienna',hour:'2-digit',hour12:false})) % 24;
+  if(LS.get('aw-dtip-seen') === today || hour < dtipSet.hour) return;
+  const t = currentTip();
+  $('dtip-pop-title').textContent = t.title; $('dtip-pop-text').textContent = t.text; $('dtip-pop').hidden = false;
+  LS.set('aw-dtip-seen', today);
+}
+$('dtip-pop-ok').addEventListener('click', () => { $('dtip-pop').hidden = true; });
+$('dtip-pop-off').addEventListener('click', async () => { $('dtip-pop').hidden = true; dtipSet.on = false; saveSettings(dtipSet); try { await notifier.disable(); } catch(e){} renderDailyTip(); });
+
+function renderAll(){ renderToday(); renderDailyTip(); renderContent(); renderCopd(); renderAsthma(); renderAllergy(); refreshNotes(); }
 window.__AW.rerender = () => { renderAll(); renderPlaces(); };
 window.__AW.setPlace = (id, auto) => setPlace(id, auto);
 window.__AW.setState = (st) => {
   if(!st) return;
-  if(st.tip) STATE.tip = st.tip; if(st.partner) STATE.partner = st.partner; if(st.appLink) STATE.appLink = st.appLink;
+  if(st.tip) STATE.tip = st.tip; if(st.partner) STATE.partner = st.partner; if(st.appLink) STATE.appLink = st.appLink; if(st.pushKey) STATE.pushKey = st.pushKey;
   renderContent(); renderAll(); if(!running) renderHint('atmen','Lust auf eine längere Atempause?');
 };
 function setPlace(id, auto){
@@ -693,7 +737,9 @@ async function initGeo(){
   if(LS.get('aw-auto')==='1'){ $('auto-loc').checked = true; locate(false); }
 }
 
-renderToday(); renderContent(); renderEx(); renderCopd(); renderAsthma(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
+renderToday(); renderDailyTip(); renderContent(); renderEx(); renderCopd(); renderAsthma(); renderAllergy(); renderHint('atmen','Lust auf eine längere Atempause?'); show(location.hash.slice(1));
+refreshNotes(); setTimeout(maybePopup, 1500);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') maybePopup(); });
 // In den installierten Apps und am Home-Bildschirm die Hinweise „Fürs iPhone“ / „Android-App“ ausblenden
 { const C = window.Capacitor, native = !!(C && C.isNativePlatform && C.isNativePlatform());
   const home = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;

@@ -12,7 +12,7 @@
 <main>
   <a class="back" href="./">← Zu Atemwetter</a>
   <div><div class="eyebrow">Atemwetter · Web-App und Android-App</div><h1>Datenschutzerklärung</h1></div>
-  <p class="muted"><small>Stand: 7. November 2026</small></p>
+  <p class="muted"><small>Stand: 8. November 2026</small></p>
 
   <section class="card note">
     <h2 style="margin:0">Kurz gesagt</h2>
@@ -20,7 +20,8 @@
       <li>Atemwetter funktioniert ohne Anmeldung und ohne Konto.</li>
       <li>Keine Cookies, keine Analyse- oder Werbedienste, kein Tracking, keine Weitergabe zu Werbezwecken.</li>
       <li>Der Standort wird nur verwendet, wenn du das ausdrücklich einschaltest. Er bleibt auf deinem Gerät; für die Luftwerte wird nur ein auf rund 1 km gerundeter Punkt an den staatlichen Wetterdienst GeoSphere Austria geschickt.</li>
-      <li>Deine Einstellungen (Ort, Allergie-Auswahl) speichert nur dein Gerät. Wir sehen sie nicht.</li>
+      <li>Deine Einstellungen (Ort, Allergie-Auswahl, was dich betrifft) speichert nur dein Gerät. Wir sehen sie nicht.</li>
+      <li>Die Morgen-Mitteilung ist freiwillig. Im Browser speichern wir dafür nur eine technische Empfangsadresse, den Ort und die Uhrzeit, keine Gesundheitsangaben.</li>
     </ul>
   </section>
 
@@ -60,11 +61,22 @@
     <ul>
       <li>den gewählten Ort und ob die Standort-Automatik eingeschaltet ist,</li>
       <li>an welchem Tag du einen Partner-Hinweis ausgeblendet hast,</li>
-      <li>deine Auswahl im Allergie-Check (z. B. Birke, Gräser),</li>
+      <li>deine Auswahl im Allergie-Check (z. B. Birke, Gräser) und beim Tagestipp, was dich betrifft (Allergie, Asthma, COPD),</li>
+      <li>ob die Morgen-Mitteilung eingeschaltet ist und zu welcher Uhrzeit,</li>
       <li>zwischengespeicherte Luftwerte und den zuletzt ermittelten Standort (nur bei eingeschalteter Standortfunktion),</li>
       <li>in der Android-App: die zuletzt heruntergeladene Programmversion von Atemwetter.</li>
     </ul>
     <p>Diese Angaben verlassen dein Gerät nicht; wir haben keinen Zugriff darauf. Die Allergie-Auswahl kann Rückschlüsse auf deine Gesundheit zulassen. Gerade deshalb wird sie ausschließlich lokal gespeichert und nie übertragen. Die Speicherung ist für die von dir gewünschten Funktionen unbedingt erforderlich (§ 165 Abs. 3 TKG 2021). <b>Löschen:</b> Website-Daten im Browser löschen bzw. bei Android unter Einstellungen › Apps › Atemwetter › Speicher › „Speicher leeren“ oder die App deinstallieren.</p>
+  </section>
+
+  <section id="mitteilung">
+    <h2>5a. Tagestipp als Morgen-Mitteilung (nur wenn du ihn einschaltest)</h2>
+    <p>Mit „Jeden Morgen als Mitteilung“ bekommst du deinen Tagestipp zur gewählten Uhrzeit. Den Text setzt immer dein Gerät aus den Tageswerten und deinen lokal gespeicherten Einstellungen zusammen. Angaben wie Allergien, Asthma oder COPD werden dafür <b>nie übertragen</b>.</p>
+    <ul>
+      <li><b>Android- und iPhone-App:</b> Die Mitteilungen werden auf dem Gerät selbst geplant. Es werden keine Daten an uns übertragen.</li>
+      <li><b>Browser (PC, Android-Browser, iPhone am Home-Bildschirm):</b> Dein Browser erzeugt eine zufällige technische Empfangsadresse samt Schlüssel bei seinem Mitteilungsdienst (z. B. Google, Mozilla, Apple oder Microsoft, je nach Browser). Diese Adresse, der gewählte Ort und die Uhrzeit werden in unserer Datenbank (Supabase, Frankfurt, siehe Punkt 3) gespeichert. Jeden Morgen schickt ein automatischer Ablauf (GitHub Actions, siehe Punkt 2) die Tageswerte des Ortes über diesen Mitteilungsdienst an deinen Browser. Inhalt und Zustellung sind verschlüsselt.</li>
+    </ul>
+    <p><b>Rechtsgrundlage:</b> deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; § 165 Abs. 3 TKG 2021). <b>Widerruf und Löschung:</b> Häkchen entfernen oder „Nicht mehr anzeigen“ wählen; die Anmeldung wird dann sofort aus der Datenbank gelöscht. Wenn du die Mitteilungen in den Einstellungen des Browsers blockierst, löschen wir die Anmeldung beim nächsten Versuch automatisch.</p>
   </section>
 
   <section>
@@ -89,7 +101,7 @@
 
   <section>
     <h2>10. Speicherdauer</h2>
-    <p>Wir speichern über die Nutzung der App keine personenbezogenen Daten von dir. Verbindungsdaten bei GitHub, Supabase und GeoSphere Austria werden von diesen nach ihren eigenen Fristen gelöscht. Daten der Verwaltungs-Konten löschen wir, sobald die Berechtigung endet.</p>
+    <p>Wir speichern über die Nutzung der App keine personenbezogenen Daten von dir, außer der Anmeldung für die Morgen-Mitteilung im Browser (Punkt 5a), solange sie eingeschaltet ist. Verbindungsdaten bei GitHub, Supabase und GeoSphere Austria werden von diesen nach ihren eigenen Fristen gelöscht. Daten der Verwaltungs-Konten löschen wir, sobald die Berechtigung endet.</p>
   </section>
 
   <section>
