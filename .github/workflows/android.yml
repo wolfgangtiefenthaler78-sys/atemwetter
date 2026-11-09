@@ -22,7 +22,9 @@ jobs:
       - run: npm run android
       - name: APK bauen
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          for i in 1 2 3 4 5; do ./gradlew --version --no-daemon && break; [ "$i" = 5 ] && exit 1; echo "Gradle-Download fehlgeschlagen, neuer Versuch in $((i*30)) s"; sleep $((i*30)); done
+          ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: Atemwetter-Test-APK
