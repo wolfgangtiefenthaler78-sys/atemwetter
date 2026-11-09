@@ -1,11 +1,10 @@
 name: Morgen-Mitteilungen (Browser)
 
-# Verschickt den Tagestipp an Browser, in denen „Jeden Morgen als Mitteilung“ eingeschaltet ist.
-# Läuft am Morgen alle 30 Minuten; jede Anmeldung bekommt höchstens eine Mitteilung pro Tag,
-# sobald ihre gewählte Uhrzeit (Wien) erreicht ist. Android- und iPhone-App planen ihre Mitteilungen selbst.
+# Der regelmäßige Versand läuft NICHT mehr hier, sondern in Supabase: pg_cron ruft alle 10 Minuten die
+# Edge Function „send-push“ auf (supabase/functions/send-push, Migration 20261109100000_push_cron.sql).
+# Grund: Die GitHub-Zeitsteuerung lief verspätet oder gar nicht.
+# Dieser Workflow bleibt für Hand-Starts: Schlüsselpaar anlegen (setup) oder ausnahmsweise nachsenden.
 on:
-  schedule:
-    - cron: '7,37 4-9 * * *'   # 05:07–10:37 Wien im Winter, 06:07–11:37 im Sommer
   workflow_dispatch:
     inputs:
       setup:

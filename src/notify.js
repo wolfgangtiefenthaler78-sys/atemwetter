@@ -7,7 +7,9 @@
 import { dailyTip } from './tips.js';
 
 const KEY = 'aw-dtip';
-const NOTE_IDS = [101, 102, 103, 104, 105, 106, 107];
+// 4 Wochen im Voraus geplant: So kommt der Tipp auch, wenn die App länger nicht geöffnet wird.
+// Beim Öffnen wird neu geplant (dann mit den aktuellen Tageswerten). iPhone erlaubt bis zu 64 geplante Mitteilungen.
+const NOTE_IDS = Array.from({ length: 28 }, (_, k) => 101 + k);
 const cap = () => window.Capacitor || null;
 
 export function loadSettings(){
