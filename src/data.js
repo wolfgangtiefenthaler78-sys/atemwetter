@@ -135,7 +135,20 @@ export const api = {
   /** Live-Änderungen der Inhalte (Tipp, Partner-Box) abonnieren. */
   watchContent(cb){
     if(!enabled) return;
-    sb.channel('content').on('postgres_changes', { event: '*', schema: 'public', table: 'content' },
-      payload => { if(payload.new && payload.new.id === 'main') cb(stateFromRow(payload.new)); }).subscribe();
+    // Stromsparen: Die Live-Verbindung bleibt nur offen, solange die App sichtbar ist.
+    // Im Hintergrund wird sie getrennt; beim Zurückkehren einmal nachladen und wieder verbinden.
+    let ch = null, hiddenAt = 0;
+    const on = () => { if(ch) return;
+      ch = sb.channel('content').on('postgres_changes', { event: '*', schema: 'public', table: 'content' },
+        payload => { if(payload.new && payload.new.id === 'main') cb(stateFromRow(payload.new)); }).subscribe(); };
+    const off = () => { if(!ch) return; sb.removeChannel(ch); ch = null; };
+    document.addEventListener('visibilitychange', async () => {
+      if(document.visibilityState === 'hidden'){ hiddenAt = Date.now(); off(); return; }
+      on();
+      if(hiddenAt && Date.now() - hiddenAt > 60 * 1000){
+        try { const r = await sb.from('content').select('*').eq('id', 'main').maybeSingle(); if(r.data) cb(stateFromRow(r.data)); } catch(e){}
+      }
+    });
+    if(document.visibilityState !== 'hidden') on();
   }
 };

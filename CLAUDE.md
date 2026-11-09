@@ -73,6 +73,10 @@ Schriften: Familjen Grotesk (Titel), Atkinson Hyperlegible (Text), IBM Plex Mono
 MAYOKA-Farben (Tokens `--mk-*`: Orange `#fb8a40`, Hellblau `#5cc0de`) und Logo (`src/mayoka-logo.png`) nur in Partner-Elementen;
 das Logo erscheint nur, wenn der Partnername „MAYOKA“ enthält.
 
+**Stromsparen** (Wunsch von Wolfgang): keine Dauer-Zeitgeber oder Animationen außerhalb der Atemübung; Live-Verbindungen nur, solange die App sichtbar ist;
+Standort automatisch nur sparsam (WLAN/Mobilfunk, bis 2 h alt), GPS nur auf Knopfdruck; Daten auf dem Gerät zwischenspeichern statt neu laden;
+Bildschirm-Sperre (`wakeLock`) nur während der Übung.
+
 ## Inhaltliche Regeln
 - **Einfache Sprache** für alle Texte, die Nutzer sehen – auch automatische (Tagestipp, Tipp der Woche, Mitteilungen, Hinweise):
   Regeln und Wortliste in `docs/einfache-sprache.md` (Sätze höchstens 16 Wörter, Alltagswörter, Fachwörter erklären,

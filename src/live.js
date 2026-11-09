@@ -67,7 +67,13 @@ export async function showPosition(lat, lon, statusEl){
   Object.assign(gps, {name: near && nd < 25 ? 'Bei ' + near.name : 'Mein Standort', lat, lon, updated:null});
   if(statusEl){ statusEl.className='status'; statusEl.textContent = 'Live-Daten für deinen Standort werden geladen …'; }
   try {
-    const days = await fetchDays(lat, lon); gps.days = days; gps.updated = new Date().toISOString(); gps.nearId = near && near.id;
+    // Stromsparen: Werte für denselben Punkt (auf ca. 1 km) 45 Minuten auf dem Gerät merken statt neu zu laden
+    const ck = lat.toFixed(2) + ',' + lon.toFixed(2); let c = null;
+    try { c = JSON.parse(localStorage.getItem('aw-live-gps') || 'null'); } catch(e){}
+    const fresh = c && c.ck === ck && Date.now() - new Date(c.updated).getTime() < 45 * 60 * 1000 && c.days && c.days.length;
+    const days = fresh ? c.days : await fetchDays(lat, lon);
+    if(!fresh){ try { localStorage.setItem('aw-live-gps', JSON.stringify({ck, days, updated:new Date().toISOString()})); } catch(e){} }
+    gps.days = days; gps.updated = fresh ? c.updated : new Date().toISOString(); gps.nearId = near && near.id;
     if(near && nd < 40) days.forEach(d => { const nd2 = (near.days || []).find(x => x.date === d.date); if(nd2){ d.pollen = nd2.pollen; d.pollen_hourly = nd2.pollen_hourly; } });
     if(statusEl) statusEl.textContent = 'Live-Daten für deinen genauen Standort' + (near && nd < 25 ? ' (bei ' + near.name + ')' : '') + '.';
   } catch(e){
