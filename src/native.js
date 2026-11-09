@@ -97,7 +97,7 @@ export function initNative(){
   const kick = () => {
     if(!window.__AW) return;
     refresh(window.__AW.curPlace(), false);
-    if(Date.now() - lastSync > 30 * 60 * 1000){ lastSync = Date.now(); checkUpdate(); }
+    if(Date.now() - lastSync > 6 * 60 * 60 * 1000){ lastSync = Date.now(); checkUpdate(); }   // Stromsparen: höchstens alle 6 Stunden
   };
   if(document.readyState === 'complete') setTimeout(kick, 50); else window.addEventListener('load', () => setTimeout(kick, 50));
   document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') kick(); });

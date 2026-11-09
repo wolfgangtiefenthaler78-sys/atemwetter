@@ -462,8 +462,10 @@ function renderEx(){
 }
 $('ex-chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if(!b) return; stopBreath(); cur = EX.find(x=>x.id===b.dataset.id); renderEx(); });
 
+let wakeLock = null;   // hält den Bildschirm nur während der Übung an
 function stopBreath(){
-  running = false; clearTimeout(timer); clearInterval(window.__cd); renderHint('atmen','Lust auf eine längere Atempause?');
+  running = false; clearTimeout(timer); clearInterval(window.__cd);
+  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; } renderHint('atmen','Lust auf eine längere Atempause?');
   $('start').textContent = 'Starten'; $('phase').textContent = 'Bereit'; $('count').textContent=''; $('remain').textContent='';
   const o=$('orb'); o.style.transitionDuration='600ms'; o.style.transform='scale(.55)';
 }
@@ -482,7 +484,7 @@ function runPhase(i){
 $('start').addEventListener('click', ()=>{
   if(running){ stopBreath(); return; }
   running = true; $('hint-atmen').hidden = true; endAt = Date.now() + Number($('dur').value)*1000; $('start').textContent='Beenden';
-  try{ navigator.wakeLock && navigator.wakeLock.request('screen').catch(()=>{}); }catch(e){}
+  try{ navigator.wakeLock && navigator.wakeLock.request('screen').then(l=>{ if(running) wakeLock = l; else l.release(); }).catch(()=>{}); }catch(e){}
   runPhase(0);
 });
 
@@ -756,11 +758,13 @@ function locate(manual){
     if(err && err.detail){ const d=document.createElement('small'); d.className='muted'; d.style.display='block'; d.textContent='Technischer Hinweis: '+err.detail; st.appendChild(d); }
     if(code===1){ $('auto-loc').checked=false; LS.set('aw-auto',null); }
   };
-  // erst schnell und sparsam (WLAN/Mobilfunk), dann – falls das nicht klappt – mit GPS
+  // erst schnell und sparsam (WLAN/Mobilfunk), dann – falls das nicht klappt – mit GPS.
+  // Stromsparen: GPS nur, wenn man selbst auf „Standort suchen“ tippt; beim automatischen Start reicht ein bis zu 2 Stunden alter Standort.
   getPos(done, err=>{
     if(err && err.code===1) return failed(err);
-    getPos(done, failed, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
-  }, {enableHighAccuracy:false, timeout:10000, maximumAge:30*60*1000});
+    if(!manual) return failed(err);
+    getPos(done, failed, {enableHighAccuracy:true, timeout:25000, maximumAge:5*60*1000});
+  }, {enableHighAccuracy:false, timeout:10000, maximumAge:(manual ? 30 : 120)*60*1000});
 }
 $('locate-now').addEventListener('click', ()=>locate(true));
 $('auto-loc').addEventListener('change', ()=>{
