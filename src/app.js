@@ -38,14 +38,14 @@ function todayIndex(){
 
 function renderToday(){
   const days = curDays();
-  if(!days.length){ $('verdict').textContent='Keine Daten'; return; }
+  if(!days.length){ $('verdict').textContent='Keine Daten'; markVerdict('verdict', null); return; }
   const ti = todayIndex(), t = days[ti];
   const b = band(t.aqi_max);
   $('hero-date').textContent = curPlace().name + ' · ' + dayName(t.date) + (autoInfo ? ' · ' + autoInfo : '');
   $('place-label').textContent = curPlace().name;
   $('place-btn').setAttribute('aria-label','Ort: '+curPlace().name+(autoInfo?' (automatisch)':'')+' – ändern');
   $('verdict').textContent = b.name;
-  $('aqi-dot').style.background = b.color;
+  $('aqi-dot').style.background = b.color; markVerdict('verdict', b.color);
   $('aqi-val').textContent = t.aqi_max;
   $('lede').textContent = b.text + ' Die Zahl ist der höchste Wert einer Stunde an diesem Tag.';
   $('scale-bar').innerHTML = BANDS.map(x => '<i style="background:'+x.color+'"></i>').join('');
@@ -167,9 +167,26 @@ $('al-sfilter').addEventListener('click', e=>{ const c=e.target.closest('.chip')
 $('al-season').addEventListener('click', e=>{ const b = e.target.closest('.s-btn'); if(!b) return;
   seasonOpen = seasonOpen===b.dataset.n ? null : b.dataset.n; renderSeason(new Date().getMonth());
   const nb = document.querySelector('#al-season .s-btn[data-n="'+b.dataset.n+'"]'); if(nb) nb.focus(); });
+// Antippen einer Kalender-Art in der Tabelle: zur passenden Zeile im Blüh-Kalender springen und sie aufklappen
+$('al-table').addEventListener('click', e=>{ const b = e.target.closest('.cal-jump'); if(!b) return;
+  const id = b.dataset.n; seasonOpen = id; seasonSel = null;
+  if(myAllergens.length && !myAllergens.includes(id)) seasonAll = true;
+  renderSeason(new Date().getMonth());
+  const nb = document.querySelector('#al-season .s-btn[data-n="'+id+'"]'); if(!nb) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  nb.closest('.s-row').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'center'});
+  nb.focus({preventScroll:true});
+  const r = nb.closest('.s-row'); r.classList.add('flash'); setTimeout(()=>r.classList.remove('flash'), 1600); });
 $('al-month').addEventListener('input', e=>{ seasonSel = Number(e.target.value); renderSeason(new Date().getMonth()); });
 $('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason(new Date().getMonth()); $('al-month').focus(); });
 // Tabelle „Die nächsten drei Tage“: Arten mit Copernicus-Tageswerten (Modell) und – aus der Auswahl – Arten nach Blühkalender
+// Schlagwort (z. B. „Achtsam“) mit der aktuellen Ampelfarbe hinterlegen; bei dunklen Farben weiße Schrift
+function markVerdict(id, color){
+  const el = $(id); if(!el) return;
+  el.classList.toggle('marked', !!color);
+  if(color){ el.style.setProperty('--vc', color); el.classList.toggle('on-dark', /q5|q6|150, 0, 50|125, 33, 129/.test(color)); }
+  else { el.style.removeProperty('--vc'); el.classList.remove('on-dark'); }
+}
 function renderPollenTable(days, ti, modelKeys){
   const calRows = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]).filter(P=>!P.k)
     : SEASON.filter(P=>!P.k && P.pot>=2 && days.some(d=>P.ms.includes(new Date(d.date+'T12:00:00').getMonth()))));
@@ -177,7 +194,7 @@ function renderPollenTable(days, ti, modelKeys){
   const CAL = [['ruht','var(--q1)'],['Saison','var(--q3)'],['Hauptblüte','var(--q4)']];
   const head = '<thead><tr><th>Art</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead>';
   const mRows = hasModel ? modelKeys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b> <span class="tag tag-v">Vorhersage</span></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('') : '';
-  const cRows = calRows.map(P=>'<tr><td><b>'+P.n+'</b> <span class="tag">Kalender</span></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
+  const cRows = calRows.map(P=>'<tr class="cal-row"><td><button type="button" class="cal-jump" data-n="'+P.id+'" aria-label="'+P.n+': im Blüh-Kalender zeigen"><b>'+P.n+'</b> <span class="tag">Kalender</span></button></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
   $('al-table').innerHTML = head+'<tbody>'+mRows+cRows+'</tbody>';
   $('al-days-sec').hidden = !(mRows || cRows);
 }
@@ -198,7 +215,7 @@ function renderAllergy(){
     const peak = inSeason.filter(P=>P.pk.includes(nowM));
     $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
     $('al-verdict').textContent = peak.length ? 'Hauptblüte' : inSeason.length ? 'Blütezeit läuft' : 'Außerhalb der Blütezeit';
-    $('al-dot').style.background = peak.length ? 'var(--q4)' : inSeason.length ? 'var(--q3)' : 'var(--q1)';
+    $('al-dot').style.background = peak.length ? 'var(--q4)' : inSeason.length ? 'var(--q3)' : 'var(--q1)'; markVerdict('al-verdict', $('al-dot').style.background);
     $('al-pill').textContent = pillTxt;
     $('al-lede').textContent = inSeason.length
       ? 'Laut Kalender ist jetzt meist Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tageswerte gibt es beim Österreichischen Pollenwarndienst.' : '')
@@ -219,7 +236,7 @@ function renderAllergy(){
   const m = new Date(t.date+'T12:00:00').getMonth();
   const offSeason = worst.i===0 && (m>=9 || m<=0);
   $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
-  $('al-verdict').textContent = V[worst.i]; $('al-dot').style.background = worst.c;
+  $('al-verdict').textContent = V[worst.i]; $('al-dot').style.background = worst.c; markVerdict('al-verdict', worst.c);
   $('al-pill').textContent = pillTxt;
   $('al-lede').textContent = (LED[worst.i].trim() + calTxt + (offSeason && !calNow.length ? ' Die Pollen-Saison ruht gerade. In der Heizzeit stören eher Hausstaub-Milben oder Schimmel in der Wohnung.' : '')).trim();
   renderPollenTable(days, ti, keys);
@@ -266,7 +283,7 @@ function renderCopd(){
     {n:'Achtsam', c:'var(--q3)', l:'Heute draußen etwas ruhiger machen. Bewegung bleibt wichtig, nur in kleineren Portionen.'},
     {n:'Vorsicht', c:'var(--q4)', l:'Heute ist die Luft für empfindliche Atemwege belastet. Bewegung lieber drinnen oder kurz und langsam. Notfallspray griffbereit halten.'}][worst];
   $('copd-date').textContent = 'Mit COPD · ' + curPlace().name + ' · ' + dayName(t.date);
-  $('copd-verdict').textContent = V.n; $('copd-dot').style.background = V.c; $('copd-lede').textContent = V.l;
+  $('copd-verdict').textContent = V.n; $('copd-dot').style.background = V.c; markVerdict('copd-verdict', V.c); $('copd-lede').textContent = V.l;
   $('copd-pill').textContent = F.filter(f=>f.lvl>0).length ? F.filter(f=>f.lvl>0).length + ' Faktor' + (F.filter(f=>f.lvl>0).length>1?'en':'') + ' zu beachten' : 'Nichts Besonderes zu beachten';
   const LC = ['var(--q2)','var(--q3)','var(--q4)'];
   $('copd-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
@@ -316,7 +333,7 @@ function renderAsthma(){
     {n:'Vorsicht', c:'var(--q4)', l:'Heute gibt es starke Auslöser. Draußen nur kurz anstrengen. Notfallspray griffbereit, auf Warnzeichen achten.'}][worst];
   const n = F.filter(f=>f.lvl>0).length;
   $('as-date').textContent = 'Mit Asthma · ' + curPlace().name + ' · ' + dayName(t.date);
-  $('as-verdict').textContent = V.n; $('as-dot').style.background = V.c; $('as-lede').textContent = V.l;
+  $('as-verdict').textContent = V.n; $('as-dot').style.background = V.c; markVerdict('as-verdict', V.c); $('as-lede').textContent = V.l;
   $('as-pill').textContent = n ? n + ' Auslöser zu beachten' : 'Nichts Besonderes zu beachten';
   const LC = ['var(--q2)','var(--q3)','var(--q4)'];
   $('as-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
