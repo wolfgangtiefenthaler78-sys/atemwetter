@@ -2,13 +2,40 @@ name: Tägliche Luft- und Pollendaten
 
 on:
   schedule:
+    # GitHub startet Zeitpläne manchmal stark verspätet oder gar nicht – daher Ersatz-Zeiten.
+    # Spätere Läufe brechen ab, wenn die Daten heute schon geschrieben wurden.
     - cron: '41 4 * * *'   # 05:41 Wien (Winterzeit), 06:41 im Sommer
+    - cron: '23 6 * * *'
+    - cron: '53 8 * * *'
+    - cron: '17 12 * * *'
   workflow_dispatch:
 
 concurrency: daily-data
 
 jobs:
+  check:
+    # Prüft bei den Ersatz-Zeiten, ob die Daten heute schon geschrieben wurden
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      skip: ${{ steps.fresh.outputs.skip }}
+    steps:
+      - name: Heute schon aktuell?
+        id: fresh
+        if: github.event_name == 'schedule'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          H="apikey: $SUPABASE_SERVICE_ROLE_KEY"
+          case "$SUPABASE_SERVICE_ROLE_KEY" in eyJ*) A="Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY";; *) A="X-Skip: 1";; esac
+          last=$(curl -fsS -H "$H" -H "$A" "${SUPABASE_URL%/}/rest/v1/air_days?select=updated_at&order=updated_at.desc&limit=1" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r[0]['updated_at'][:10] if r else '')" || echo "")
+          echo "Letzte Aktualisierung: ${last:-unbekannt}"
+          if [ "$last" = "$(date -u +%F)" ]; then echo "Daten von heute sind schon da – nichts zu tun."; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+
   update:
+    needs: check
+    if: needs.check.outputs.skip != '1'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:

@@ -20,11 +20,11 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
 | Android-Zusatz (Standort, Teilen, Selbst-Update) | `src/native.js` |
 | Pollen- und Sporenkatalog (Blühzeiten, Hauptblüte, Allergiepotenzial) | `src/pollen.js` |
 | Tagestipp und automatischer Tipp der Woche (gemeinsame Logik für App und Mitteilungen) | `src/tips.js` |
-| Morgen-Mitteilung: Steuerung je Plattform | `src/notify.js` (App: LocalNotifications; Browser: Web-Push mit `src/sw.js` → `dist/sw.js`) |
-| Versand Web-Push (Schlüsselpaar in `app_secrets`, öffentlicher Teil in `content.push_public_key`) | `scripts/send_push.mjs`, `.github/workflows/push.yml` (morgens alle 30 min) |
+| Morgen-Mitteilung: Steuerung je Plattform | `src/notify.js` (App: LocalNotifications, 28 Tage im Voraus geplant; Browser: Web-Push mit `src/sw.js` → `dist/sw.js`; ein-/ausschaltbar über „Jeden Morgen als Mitteilung“) |
+| Versand Web-Push (Schlüsselpaar in `app_secrets`, öffentlicher Teil in `content.push_public_key`) | Edge Function `supabase/functions/send-push` (in Supabase bereitgestellt, `verify_jwt` aus, Schutz über `app_secrets.cron_key`), ausgelöst von pg_cron alle 10 min (`atemwetter-push`). `scripts/send_push.mjs` + `push.yml` nur noch von Hand (Schlüssel anlegen). Nicht auf GitHub-Zeitpläne verlassen: die laufen verspätet oder gar nicht. |
 | Öffentliche Verbindungsdaten | `src/config.js` (nur URL + anon-Schlüssel) |
 | Datenbank-Schema und Zugriffsregeln | `supabase/migrations/*.sql`, Startdaten `supabase/seed.sql` |
-| Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py` |
+| Tägliche Daten (GeoSphere, Copernicus) | `scripts/fetch_air.py`, `scripts/fetch_pollen.py`, `scripts/push_supabase.py`; `daily-data.yml` mit Ersatz-Zeiten (überspringt, wenn heute schon geschrieben) |
 | Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-Test-APK, `ios.yml` = iPhone-Prüfbau und TestFlight, `android-release.yml` = unterschriebene App als GitHub-Release) |
 | Download-Seite Android | `public/android.html` (fester Link `releases/latest/download/atemwetter.apk`) |
 | iPhone ohne App Store | `public/iphone.html` (Anleitung „Zum Home-Bildschirm“, QR `iphone-qr.svg`), `public/manifest.webmanifest`, `apple-touch-icon.png` |
