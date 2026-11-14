@@ -1,0 +1,21 @@
+name: Einmalig – Antreiber-Releases aus Atemwetter entfernen
+# Die Antreiber-App hat jetzt ein eigenes Projekt. Dieser Lauf löscht ihre alten Releases und Tags hier.
+# Die Datei wird gleich danach wieder entfernt.
+on:
+  push:
+    branches: ['claude/elegant-babbage-4e0k9a']
+    paths: ['.github/workflows/aufraeumen-antreiber.yml']
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          for t in $(gh release list --limit 200 --json tagName --jq '.[].tagName' | grep '^antreiber-' || true); do
+            echo "lösche $t"; gh release delete "$t" --cleanup-tag -y
+          done
+          echo "Übrig:"; gh release list --limit 5

@@ -28,7 +28,6 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
 | Automatik | `.github/workflows/` (tägliche Daten, Web veröffentlichen, Android-Test-APK, `ios.yml` = iPhone-Prüfbau und TestFlight, `android-release.yml` = unterschriebene App als GitHub-Release) |
 | Download-Seite Android | `public/android.html` (fester Link `releases/latest/download/atemwetter.apk`) |
 | iPhone ohne App Store | `public/iphone.html` (Anleitung „Zum Home-Bildschirm“, QR `iphone-qr.svg`), `public/manifest.webmanifest`, `apple-touch-icon.png` |
-| Eigene App „Antreiber“ (Selbsttest Transaktionsanalyse, `at.mayoka.antreiber`) | `antreiber/`: Inhalt `src/app.html`, Bau `npm run android` (Lader wie Atemwetter), `app-meta.json` (`shell` bei nativen Änderungen +1), Workflow `antreiber-android.yml` → Release `antreiber-aktuell` (APK + Selbst-Update) |
 | Android (Capacitor 7, `at.mayoka.atemwetter`) | `android/`, Lader `scripts/build-android.mjs` |
 | iPhone (Capacitor 7, Swift Package Manager, gleiche ID) | `ios/`, `npm run ios`; Bau und TestFlight-Upload über `.github/workflows/ios.yml` (macOS bei GitHub, kein eigener Mac nötig) |
 
