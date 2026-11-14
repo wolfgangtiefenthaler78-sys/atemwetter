@@ -4,5 +4,10 @@
   "webDir": "www",
   "android": {
     "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }

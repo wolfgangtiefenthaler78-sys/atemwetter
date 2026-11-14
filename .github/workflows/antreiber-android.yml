@@ -1,6 +1,9 @@
 name: Antreiber-App (Android) bauen
 
 # Baut die App „Antreiber“ (Ordner antreiber/) und stellt sie als GitHub-Release bereit.
+# Zusätzlich das feste Release „antreiber-aktuell“ (immer neueste Version):
+#   antreiber.apk  – fester Download-Link für neue Nutzer und für „Jetzt aktualisieren“
+#   version.json + app.html – daraus holen installierte Apps neue Inhalte selbst
 # Mit den Secrets ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD wird sie mit dem MAYOKA-Schlüssel
 # unterschrieben (dann lassen sich spätere Versionen über die alte installieren), sonst als Test-APK.
 on:
@@ -30,7 +33,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-      - run: npx cap sync android
+      - run: npm run android
       - name: Schlüssel bereitstellen
         id: key
         env:
@@ -69,3 +72,13 @@ jobs:
             antreiber.apk
             antreiber.aab
           fail_on_unmatched_files: false
+      - name: Feste Update-Adresse „antreiber-aktuell“ erneuern
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete antreiber-aktuell --cleanup-tag -y || true
+          gh release create antreiber-aktuell antreiber.apk antreiber/dist/version.json antreiber/dist/app.html \
+            --target "${{ github.sha }}" --latest=false \
+            --title "Antreiber – immer die neueste Version" \
+            --notes "Fester Link zur neuesten Antreiber-App (1.0.${{ github.run_number }}). Installierte Apps holen sich Neuerungen hier selbst."

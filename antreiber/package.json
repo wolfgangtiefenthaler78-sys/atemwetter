@@ -4,7 +4,8 @@
   "private": true,
   "description": "Antreiber-Test (Transaktionsanalyse) als Android-App, MAYOKA andersch gsund",
   "scripts": {
-    "android": "npx cap sync android"
+    "build": "node scripts/build.mjs",
+    "android": "node scripts/build.mjs && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "7.6.10",

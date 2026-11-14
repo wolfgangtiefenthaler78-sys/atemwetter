@@ -102,6 +102,12 @@ details[open] summary::after{content:"–"}
 .partner::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:linear-gradient(90deg,var(--mk-orange) 0 50%,var(--mk-blue) 50% 100%)}
 .src{font-size:14px;color:var(--muted)}
 .src a,.partner a{color:var(--accent)}
+.update{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface-solid);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.08);
+  padding:14px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(18px,env(safe-area-inset-left,0px))}
+.update::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--mk-orange) 0 50%,var(--mk-blue) 50% 100%)}
+.update .in{max-width:600px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.update p{flex:1 1 220px}
+.ver{font-family:var(--f-num);font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -171,7 +177,9 @@ details[open] summary::after{content:"–"}
       <p>Grundlage: Kahler T. (1975): Drivers – the key to the process of scripts. Transactional Analysis Journal 5(3), 280–284. <a href="https://doi.org/10.1177/036215377500500318" target="_blank" rel="noopener">doi.org/10.1177/036215377500500318</a>. Die Aussagen in diesem Test sind neu formuliert.</p>
     </div>
   </section>
+  <p class="ver" id="ver"></p>
 </main>
+<div class="update" id="update" hidden><div class="in"><p id="updateText"></p><button class="btn" id="updateBtn"></button><button class="btn ghost small" id="updateLater">Später</button></div></div>
 
 <script src="capacitor-core.js"></script>
 <script>
@@ -313,7 +321,47 @@ function refreshStart(){
 }
 refreshStart();
 
+/* ---- Selbst-Aktualisierung (nur in der Android-App) ----
+   Inhalt: neue app.html laden, beim nächsten Start (oder „Jetzt neu laden“) verwenden.
+   App selbst (neue Erweiterungen): Hinweis „Jetzt aktualisieren“, lädt die neue APK, Installation über die alte.
+   Sparsam: höchstens alle 6 Stunden nachsehen, nur beim Öffnen. */
+const RUNNING = window.__AB_RUNNING || "web", SHELL = window.__AB_SHELL || 0, UPD = window.__AB_UPDATE || null;
+const raw = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ v===null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} } };
+raw.set("ab-boot-ok", RUNNING);   // dieser Stand startet sauber
+function bar(text, btn, fn){
+  $("updateText").textContent = text; $("updateBtn").textContent = btn;
+  $("updateBtn").onclick = fn; $("updateLater").onclick = ()=>{ $("update").hidden = true; };
+  $("update").hidden = false;
+}
+function openApk(url){ window.location.href = url; }   // Capacitor öffnet fremde Adressen im Browser: Download, dann Installation
+async function checkUpdate(force){
+  if (!isNative || !UPD || !UPD.base) return;
+  const last = +(raw.get("ab-check") || 0);
+  if (!force && Date.now() - last < 6*3600*1000) return;
+  raw.set("ab-check", String(Date.now()));
+  try{
+    const v = await (await fetch(UPD.base + "version.json?t=" + Date.now(), {cache:"no-store"})).json();
+    const apk = v.apkUrl || UPD.apk;
+    if ((v.minShell && v.minShell > SHELL) || (v.shell && v.shell > SHELL)){
+      bar("Eine neue Version der App ist da. Ihre Ergebnisse bleiben erhalten.", "Jetzt aktualisieren", ()=>openApk(apk));
+      if (v.minShell && v.minShell > SHELL) return;
+    }
+    if (!v.version || v.version === RUNNING || v.version === raw.get("ab-bundle-v") || v.version === raw.get("ab-bundle-bad")) return;
+    const html = await (await fetch(UPD.base + "app.html?v=" + v.version, {cache:"no-store"})).text();
+    if (!html.includes('id="quiz"') || html.length < 5000) return;   // unvollständiger Download
+    raw.set("ab-bundle", html); raw.set("ab-bundle-v", v.version); raw.set("ab-bundle-base", window.__AB_BUILTIN || "");
+    if ($("update").hidden && view !== "quiz") bar("Eine neue Version ist bereit.", "Jetzt neu laden", ()=>location.reload());
+  }catch(e){ /* kein Internet: beim nächsten Öffnen wieder */ }
+}
+(async ()=>{
+  let name = "";
+  try{ if (App) name = (await App.getInfo()).version; }catch(e){}
+  $("ver").textContent = (name ? `App ${name} · ` : "") + `Inhalt ${String(RUNNING).slice(0,6)}`;
+})();
+checkUpdate(false);
+
 if (App){
+  App.addListener("appStateChange", st=>{ if (st.isActive) checkUpdate(false); });
   App.addListener("backButton", ()=>{
     if (view==="quiz") goBack();
     else if (view==="result"){ show("start"); refreshStart(); }
