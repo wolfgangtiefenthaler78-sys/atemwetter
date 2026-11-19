@@ -65,7 +65,8 @@ class OutOfBounds(Exception):
 
 def get(url):
     last = None
-    for attempt in range(4):
+    waits = [5, 15, 30, 60, 120, 0]   # kurze Störungen bei GeoSphere (z. B. HTTP 503) abwarten, insgesamt rund 4 Minuten
+    for attempt, wait in enumerate(waits):
         try:
             r = subprocess.run(["curl", "-sS", "-m", "90", "-w", "\n%{http_code}", url], capture_output=True, text=True, check=True).stdout
             body, code = r.rsplit("\n", 1)
@@ -79,7 +80,9 @@ def get(url):
             raise
         except Exception as e:
             last = e
-        time.sleep(5)
+        if wait:
+            print("Versuch %d fehlgeschlagen (%s), neuer Versuch in %d s" % (attempt + 1, str(last)[:80], wait), flush=True)
+            time.sleep(wait)
     raise SystemExit("Abruf fehlgeschlagen: %s" % last)
 
 def features(dataset, params, pts, with_start=True):
