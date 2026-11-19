@@ -34,7 +34,7 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
 ## Datenbank (Supabase, Region Frankfurt)
 - `places` – Orte (Standardort `dornbirn`). Neue Orte als Zeile einfügen, nicht im Code.
 - `air_days` – je Ort und Tag: `aqi_max`, `pm25`, `pm10`, `no2`, `o3_max`, `inversion`, `aqi_hourly`, `pollen`, `pollen_hourly`.
-  Schreibt nur die GitHub-Action (service_role). Alte Tage löscht `cleanup_air_days()`.
+  Schreiben die Edge Function `daily-air` (Luft) und die GitHub-Action (Luft + Pollen), beide mit service_role. Alte Tage löscht `cleanup_air_days()`.
 - `content` – genau eine Zeile `id='main'`: `tip`, `partner`, `app_link`, `store_url`. Schreibt das Dashboard (Admins).
 - `partner_codes` – Partner-Codes mit Einlösungen, nur Admins. Zählen über `change_code_count()`.
 - `admins` – freigeschaltete Konten (Supabase-Auth-Nutzer-IDs).
@@ -44,7 +44,7 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
 - Schema nur über **neue** Migrationsdateien ändern (`supabase/migrations/<Zeitstempel>_<name>.sql`), nie alte bearbeiten.
   Jede neue Tabelle bekommt RLS mit Regeln. Nach Änderungen die Advisors (Sicherheit, Performance) prüfen.
 
-- Tägliche Daten starten zuverlässig über pg_cron `atemwetter-daily-data` (04:45–08:45 UTC) → `trigger_daily_data()` stößt `daily-data.yml` per GitHub-API an, nur wenn heute noch keine Daten da sind. Schlüssel: `app_secrets.github_token` (fine-grained, nur Actions: Read and write, läuft jährlich ab – erneuern!).
+- Tägliche Daten starten zuverlässig über pg_cron `atemwetter-daily-data` (04:45–08:45 UTC) → `trigger_daily_data()`: fehlen die Luftwerte von heute, ruft sie die Edge Function `supabase/functions/daily-air` auf (GeoSphere, gleiche Rechnung wie `fetch_air.py`, schreibt nur Luftspalten; Ergebnis in `app_secrets.daily_air_result`). Pollen liefert weiter `daily-data.yml` (Copernicus) und setzt `app_secrets.pollen_updated`; dessen Ersatz-Läufe prüfen diesen Merker. Optional: mit `app_secrets.github_token` (fine-grained, nur Actions: Read and write, läuft jährlich ab) stößt die Funktion auch den GitHub-Lauf an.
 
 ## Geheimnisse – nie in Code, Commits oder Antworten
 - `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus), `ANDROID_KEYSTORE_B64`/`ANDROID_KEYSTORE_PASSWORD` (App-Signatur, Sicherung bei Wolfgang),

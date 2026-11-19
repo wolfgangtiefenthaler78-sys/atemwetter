@@ -18,7 +18,9 @@ for p in air["places"]:
     for d in p["days"]:
         rows.append({"place_id": p["id"], "date": d["date"], "aqi_max": d.get("aqi_max"), "pm25": d.get("pm25"), "pm10": d.get("pm10"),
                      "no2": d.get("no2"), "o3_max": d.get("o3_max"), "inversion": d.get("inversion"), "aqi_hourly": d.get("aqi_hourly") or [],
-                     "pollen": d.get("pollen"), "pollen_hourly": d.get("pollen_hourly") or {}, "updated_at": air["updated"]})
+                     "updated_at": air["updated"],
+                     # Pollen nur mitschreiben, wenn sie in diesem Lauf wirklich geholt wurden – sonst bleiben die vorhandenen erhalten
+                     **({"pollen": d.get("pollen"), "pollen_hourly": d.get("pollen_hourly") or {}} if air.get("pollen_source") else {})})
 
 def call(path, body, prefer=None):
     h = dict(H)
@@ -33,4 +35,8 @@ def call(path, body, prefer=None):
 for i in range(0, len(rows), 200):
     call("/rest/v1/air_days?on_conflict=place_id,date", rows[i:i+200], "resolution=merge-duplicates,return=minimal")
 call("/rest/v1/rpc/cleanup_air_days", {"keep_days": 7})
+if air.get("pollen_source"):   # Pollen von heute geschrieben: Merker für Zeitgeber und Ersatz-Läufe
+    import datetime, zoneinfo
+    today = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Vienna")).date().isoformat()
+    call("/rest/v1/app_secrets?on_conflict=name", [{"name": "pollen_updated", "value": today}], "resolution=merge-duplicates,return=minimal")
 print("ok", len(rows), "Tageszeilen geschrieben")
