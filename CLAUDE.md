@@ -44,6 +44,8 @@ Persönlicher Tagestipp, Partner-Box), Allergie (Pollen-Check, Auswahl und Blüh
 - Schema nur über **neue** Migrationsdateien ändern (`supabase/migrations/<Zeitstempel>_<name>.sql`), nie alte bearbeiten.
   Jede neue Tabelle bekommt RLS mit Regeln. Nach Änderungen die Advisors (Sicherheit, Performance) prüfen.
 
+- Tägliche Daten starten zuverlässig über pg_cron `atemwetter-daily-data` (04:45–08:45 UTC) → `trigger_daily_data()` stößt `daily-data.yml` per GitHub-API an, nur wenn heute noch keine Daten da sind. Schlüssel: `app_secrets.github_token` (fine-grained, nur Actions: Read and write, läuft jährlich ab – erneuern!).
+
 ## Geheimnisse – nie in Code, Commits oder Antworten
 - `SUPABASE_SERVICE_ROLE_KEY`, `ADS_API_KEY` (Copernicus), `ANDROID_KEYSTORE_B64`/`ANDROID_KEYSTORE_PASSWORD` (App-Signatur, Sicherung bei Wolfgang),
   `APPLE_TEAM_ID`, `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_KEY_P8` (iPhone/TestFlight): nur als GitHub-Secrets.
