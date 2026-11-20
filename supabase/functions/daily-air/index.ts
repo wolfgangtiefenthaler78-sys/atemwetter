@@ -39,16 +39,26 @@ async function get(url: string) {
 function startUtc(): string {
   // heute 00:00 Wiener Zeit als UTC-Zeitpunkt
   const now = new Date();
-  const d = now.toLocaleDateString("sv-SE", { timeZone: TZ });
+  const d = local(now.toISOString()).date;
   for (let h = -3; h <= 3; h++) {
     const c = new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10), h, 0));
-    if (c.toLocaleDateString("sv-SE", { timeZone: TZ }) === d && local(c.toISOString()).hour === 0) return c.toISOString().slice(0, 16);
+    const l = local(c.toISOString());
+    if (l.date === d && l.hour === 0) return c.toISOString().slice(0, 16);
   }
   return now.toISOString().slice(0, 11) + "00:00";
 }
+// Datum und Stunde in Wiener Zeit. Rechenzeit sparen: ein Formatierer für alles, jeder Zeitpunkt nur einmal
+// (Supabase bricht Funktionen mit zu viel Rechenzeit ab – „CPU Time exceeded“).
+const FMT = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" });
+const LOCAL = new Map<string, { date: string; hour: number }>();
 function local(ts: string) {
-  const t = new Date(ts);
-  return { date: t.toLocaleDateString("sv-SE", { timeZone: TZ }), hour: Number(t.toLocaleString("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false })) % 24 };
+  let v = LOCAL.get(ts);
+  if (!v) {
+    const p = Object.fromEntries(FMT.formatToParts(new Date(ts)).map((x) => [x.type, x.value]));
+    v = { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) % 24 };
+    LOCAL.set(ts, v);
+  }
+  return v;
 }
 function sub(k: string, c: number | null) {
   if (c == null) return null;
