@@ -1,7 +1,7 @@
 /* Atemwetter – Pollen- und Sporenkatalog (gemeinsam für App, Tagestipp und Mitteilungen). Ohne Bildschirmzugriff. */
 export const POLLEN_NAMES = {alder:'Erle',birch:'Birke',grass:'Gräser',mugwort:'Beifuß',ragweed:'Ambrosia'};
 export const POLLEN_TH = {alder:[10,50], birch:[10,100], grass:[10,50], mugwort:[5,20], ragweed:[3,10]};
-export const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q2)'},{name:'mäßig',c:'var(--q3)'},{name:'hoch',c:'var(--q4)'}];
+export const LEVELS = [{name:'keine',c:'var(--q1)'},{name:'gering',c:'var(--q3)'},{name:'mäßig',c:'var(--q4)'},{name:'hoch',c:'var(--q6)'}];   // grün → rot
 export function pollenLevel(k,v){ v=v||0; const t=POLLEN_TH[k]||[10,50]; const i = v<1?0 : v<t[0]?1 : v<t[1]?2 : 3; return Object.assign({i}, LEVELS[i]); }
 // Typische Blühzeiten in Mitteleuropa (0 = Jänner): Monate mit Flug (ms), Hauptblüte (pk), Allergiepotenzial (pot 1–3).
 // k = Schlüssel der tagesgenauen Copernicus-Prognose (nur Erle, Birke, Gräser, Beifuß, Ambrosia).

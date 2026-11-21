@@ -184,14 +184,14 @@ $('al-month-now').addEventListener('click', ()=>{ seasonSel = null; renderSeason
 function markVerdict(id, color){
   const el = $(id); if(!el) return;
   el.classList.toggle('marked', !!color);
-  if(color){ el.style.setProperty('--vc', color); el.classList.toggle('on-dark', /q5|q6|150, 0, 50|125, 33, 129/.test(color)); }
+  if(color){ el.style.setProperty('--vc', color); el.classList.toggle('on-dark', /q6|200, 30, 30/.test(color)); }
   else { el.style.removeProperty('--vc'); el.classList.remove('on-dark'); }
 }
 function renderPollenTable(days, ti, modelKeys){
   const calRows = (myAllergens.length ? myAllergens.map(k=>SEASON_BY[k]).filter(P=>!P.k)
     : SEASON.filter(P=>!P.k && P.pot>=2 && days.some(d=>P.ms.includes(new Date(d.date+'T12:00:00').getMonth()))));
   const hasModel = days.some(d=>d.pollen) && modelKeys.length;
-  const CAL = [['ruht','var(--q1)'],['Saison','var(--q3)'],['Hauptblüte','var(--q4)']];
+  const CAL = [['ruht','var(--q1)'],['Saison','var(--q3)'],['Hauptblüte','var(--q6)']];
   const head = '<thead><tr><th>Art</th>'+days.map((d,i)=>'<th>'+(i===ti?'Heute':shortDay(d.date))+'</th>').join('')+'</tr></thead>';
   const mRows = hasModel ? modelKeys.map(k=>'<tr><td><b>'+POLLEN_NAMES[k]+'</b> <span class="tag tag-v">Vorhersage</span></td>'+days.map(d=>{ const v=(d.pollen||{})[k]||0, L=pollenLevel(k,v); return '<td><span class="lv"><span class="dot" style="background:'+L.c+'"></span>'+L.name+(v>=1?' <span class="num muted" style="font-size:.82rem">'+fmt(v)+'</span>':'')+'</span></td>'; }).join('')+'</tr>').join('') : '';
   const cRows = calRows.map(P=>'<tr class="cal-row"><td><button type="button" class="cal-jump" data-n="'+P.id+'" aria-label="'+P.n+': im Blüh-Kalender zeigen"><b>'+P.n+'</b> <span class="tag">Kalender</span></button></td>'+days.map(d=>{ const c=CAL[phase(P, new Date(d.date+'T12:00:00').getMonth())]; return '<td><span class="lv"><span class="dot" style="background:'+c[1]+'"></span>'+c[0]+'</span></td>'; }).join('')+'</tr>').join('');
@@ -215,7 +215,7 @@ function renderAllergy(){
     const peak = inSeason.filter(P=>P.pk.includes(nowM));
     $('al-date').textContent = 'Pollen-Check · ' + curPlace().name + ' · ' + dayName(t.date);
     $('al-verdict').textContent = peak.length ? 'Hauptblüte' : inSeason.length ? 'Blütezeit läuft' : 'Außerhalb der Blütezeit';
-    $('al-dot').style.background = peak.length ? 'var(--q4)' : inSeason.length ? 'var(--q3)' : 'var(--q1)'; markVerdict('al-verdict', $('al-dot').style.background);
+    $('al-dot').style.background = peak.length ? 'var(--q6)' : inSeason.length ? 'var(--q3)' : 'var(--q1)'; markVerdict('al-verdict', $('al-dot').style.background);
     $('al-pill').textContent = pillTxt;
     $('al-lede').textContent = inSeason.length
       ? 'Laut Kalender ist jetzt meist Saison für ' + inSeason.map(P=>P.n+(P.pk.includes(nowM)?' (Hauptblüte)':'')).join(', ') + '.' + (t.pollen == null ? ' Tageswerte gibt es beim Österreichischen Pollenwarndienst.' : '')
@@ -279,13 +279,13 @@ function renderCopd(){
   }
   const worst = Math.max(...F.map(f=>f.lvl));
   const V = [
-    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung, gern auch etwas länger.'},
+    {n:'Ruhiger Tag', c:'var(--q1)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung, gern auch etwas länger.'},
     {n:'Achtsam', c:'var(--q3)', l:'Heute draußen etwas ruhiger machen. Bewegung bleibt wichtig, nur in kleineren Portionen.'},
-    {n:'Vorsicht', c:'var(--q4)', l:'Heute ist die Luft für empfindliche Atemwege belastet. Bewegung lieber drinnen oder kurz und langsam. Notfallspray griffbereit halten.'}][worst];
+    {n:'Vorsicht', c:'var(--q6)', l:'Heute ist die Luft für empfindliche Atemwege belastet. Bewegung lieber drinnen oder kurz und langsam. Notfallspray griffbereit halten.'}][worst];
   $('copd-date').textContent = 'Mit COPD · ' + curPlace().name + ' · ' + dayName(t.date);
   $('copd-verdict').textContent = V.n; $('copd-dot').style.background = V.c; markVerdict('copd-verdict', V.c); $('copd-lede').textContent = V.l;
   $('copd-pill').textContent = F.filter(f=>f.lvl>0).length ? F.filter(f=>f.lvl>0).length + ' Faktor' + (F.filter(f=>f.lvl>0).length>1?'en':'') + ' zu beachten' : 'Nichts Besonderes zu beachten';
-  const LC = ['var(--q2)','var(--q3)','var(--q4)'];
+  const LC = ['var(--q1)','var(--q3)','var(--q6)'];
   $('copd-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
   const POS = [
     ['Kutschersitz','Im Sitzen leicht nach vorn beugen. Unterarme auf die Oberschenkel stützen. Schultern locker lassen.'],
@@ -328,14 +328,14 @@ function renderAsthma(){
   if(inv.level==='stark') add(1,'Wenig Luftaustausch','am Morgen','Kaum Wind. Am Morgen bleibt schlechte Luft am Boden. Besser zu Mittag hinausgehen.');
   const worst = Math.max(...F.map(f=>f.lvl));
   const V = [
-    {n:'Ruhiger Tag', c:'var(--q2)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung im Freien. Das Notfallspray trotzdem mitnehmen.'},
+    {n:'Ruhiger Tag', c:'var(--q1)', l:'Die Luft macht es heute leicht. Ein guter Tag für Bewegung im Freien. Das Notfallspray trotzdem mitnehmen.'},
     {n:'Achtsam', c:'var(--q3)', l:'Heute gibt es ein paar Auslöser. Bewegung bleibt wichtig: lieber kürzer und gut aufgewärmt.'},
-    {n:'Vorsicht', c:'var(--q4)', l:'Heute gibt es starke Auslöser. Draußen nur kurz anstrengen. Notfallspray griffbereit, auf Warnzeichen achten.'}][worst];
+    {n:'Vorsicht', c:'var(--q6)', l:'Heute gibt es starke Auslöser. Draußen nur kurz anstrengen. Notfallspray griffbereit, auf Warnzeichen achten.'}][worst];
   const n = F.filter(f=>f.lvl>0).length;
   $('as-date').textContent = 'Mit Asthma · ' + curPlace().name + ' · ' + dayName(t.date);
   $('as-verdict').textContent = V.n; $('as-dot').style.background = V.c; markVerdict('as-verdict', V.c); $('as-lede').textContent = V.l;
   $('as-pill').textContent = n ? n + ' Auslöser zu beachten' : 'Nichts Besonderes zu beachten';
-  const LC = ['var(--q2)','var(--q3)','var(--q4)'];
+  const LC = ['var(--q1)','var(--q3)','var(--q6)'];
   $('as-factors').innerHTML = F.sort((a,b)=>b.lvl-a.lvl).map(f=>'<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="dot" style="background:'+LC[f.lvl]+'"></span><div class="name"><b>'+f.name+'</b><small>'+f.tip+'</small></div><div class="val num">'+f.val+'</div></div>').join('');
   renderHint('asthma', 'Eine ruhige Pause vom Alltag:');
 }
